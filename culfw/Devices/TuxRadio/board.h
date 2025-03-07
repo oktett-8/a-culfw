@@ -1,8 +1,6 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#include <avr/io.h>
-
 #define BUSWARE_TUXRADIO
 
 #define SPI_PORT		PORTB
@@ -73,9 +71,6 @@
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG_SW
-#define HAS_IT
-#define HAS_TCM97001
-#define HAS_HMS
 
 #define BUSWARE_CSM
 

@@ -13,7 +13,6 @@
 
 #include <string.h>
 
-#include "fband.h"
 #include "cc1100.h"
 #include "cdc.h"
 #include "clock.h"
@@ -141,7 +140,6 @@ main(void)
   display_channel = DISPLAY_USB|DISPLAY_LCD|DISPLAY_RFROUTER;
   rf_router_init();
 
-  checkFrequency(); 
   LED_OFF();
 
   for(;;) {

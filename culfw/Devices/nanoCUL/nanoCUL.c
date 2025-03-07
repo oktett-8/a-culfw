@@ -11,9 +11,10 @@
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 
+#include <string.h>
+
 #include "board.h"
 
-#include "fband.h"
 #include "spi.h"
 #include "cc1100.h"
 #include "clock.h"
@@ -57,12 +58,6 @@
 #ifdef HAS_KOPP_FC
 #include "kopp-fc.h"
 #endif
-#ifdef HAS_BELFOX
-#include "belfox.h"
-#endif
-#ifdef HAS_RFNATIVE
-#include "rf_native.h"
-#endif
 #ifdef HAS_ZWAVE
 #include "rf_zwave.h"
 #endif
@@ -105,14 +100,8 @@ const PROGMEM t_fntab fntab[] = {
 #ifdef HAS_RAWSEND
   { 'K', ks_send },
 #endif
-#if defined (HAS_IRRX) || defined (HAS_IRTX)
-  { 'I', ir_func },
-#endif
 #ifdef HAS_KOPP_FC
   { 'k', kopp_fc_func },
-#endif  
-#ifdef HAS_ONEWIRE
-  { 'O', onewire_func },
 #endif
 #ifdef HAS_BELFOX
   { 'L', send_belfox },
@@ -149,6 +138,7 @@ const PROGMEM t_fntab fntab[] = {
 #ifdef HAS_ZWAVE
   { 'z', zwave_func },
 #endif
+  { 0, 0 },
   { 0, 0 },
 };
 
@@ -202,7 +192,6 @@ main(void)
   display_channel |= DISPLAY_RFROUTER;
 #endif
 
-  checkFrequency(); 
   LED_OFF();
 
   sei();
@@ -225,9 +214,6 @@ main(void)
 #endif
 #ifdef HAS_RWE
     rf_rwe_task();
-#endif
-#ifdef HAS_RFNATIVE
-    native_task();
 #endif
 #ifdef HAS_KOPP_FC
     kopp_fc_task();

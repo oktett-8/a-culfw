@@ -28,15 +28,7 @@
   this software.
 */
 #include "Descriptors.h"
-
-#include <Drivers/USB/HighLevel/StdDescriptors.h>
-#include <Drivers/USB/LowLevel/LowLevel.h>  // for EP_TYPE_BULK, etc
-#include <avr/io.h>                     // for bit_is_set
-#include <avr/pgmspace.h>               // for PROGMEM, pgm_read_byte
-#include <stddef.h>                     // for NULL
-#include <stdint.h>                     // for uint16_t, uint8_t
-
-#include "board.h"                      // for MULTI_FREQ_DEVICE, etc
+#include "board.h"
 
 #ifdef LUFA
 #define NO_DESCRIPTOR_STRING NO_DESCRIPTOR
@@ -244,7 +236,7 @@ bool USB_GetDescriptor (const uint16_t wValue,
           break;
         case 0x02:
 #ifdef MULTI_FREQ_DEVICE
-          if (!bit_is_set(PINB, PB6))
+          if (!bit_is_set(MARK433_PIN, MARK433_BIT))
             Address = DESCRIPTOR_ADDRESS(ProductString433);
           else
 #endif

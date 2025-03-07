@@ -21,14 +21,13 @@
 #error "You can't have HAS_HM485 when HAS_HELIOS is enabled"
 #endif
        
-#include <avr/interrupt.h>
-#include <avr/io.h>
+#include "helios.h"   
+#include "stringfunc.h"   
+#include "display.h"   
+#include "clock.h"   
 #include <string.h>
-
-#include "clock.h"
-#include "display.h"
-#include "helios.h"
-#include "stringfunc.h"
+#include <avr/io.h>   
+#include <avr/interrupt.h>   
        
 // PD2 (RXD1) and PD3 (TXD1) are connected to the RS485 transceiver's 
 // RXD and TXD; PA3 is connected to REN/TXEN (high = transmit)   
@@ -261,8 +260,9 @@ void helios_func(char *in) {
 }
 
 int helios_fs20_emu(char *in) {
-#ifdef HELIOS_EMU_HC
   uint8_t hb[4], d = 0;
+
+#ifdef HELIOS_EMU_HC
   if (!strncmp(in+1, HELIOS_EMU_HC, 4)) {
     memset( hb, 0, sizeof(hb) );
     d = fromhex(in+5, hb, 2);

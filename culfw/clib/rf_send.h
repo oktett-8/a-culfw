@@ -2,9 +2,6 @@
 #define _RF_SEND_H
 
 
-#include <stdint.h>                     // for uint8_t, uint16_t
-#include "board.h"
-
 /* public prototypes */
 void fs20send(char *in);
 void rawsend(char *in);
@@ -18,8 +15,6 @@ void addParityAndSendData(uint8_t *hb, uint8_t hblen,
 
 
 extern uint16_t credit_10ms;
-#ifndef MAX_CREDIT
 #define MAX_CREDIT 900       // max 9 seconds burst / 25% of the hourly budget
-#endif
 
 #endif

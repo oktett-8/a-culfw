@@ -5,7 +5,6 @@
 #ifndef MBUS_PACKET_H
 #define MBUS_PACKET_H
 
-#include "mbus/mbus_defs.h"             // for uint8, uint16
 //----------------------------------------------------------------------------------
 //  Constants 
 //----------------------------------------------------------------------------------
@@ -23,6 +22,10 @@
 
 #define WMBUS_SMODE            1
 #define WMBUS_TMODE            2
+#define WMBUS_CMODE            3
+
+#define WMBUS_FRAMEA           1
+#define WMBUS_FRAMEB           2
 
 //----------------------------------------------------------------------------------
 // Functions
@@ -38,6 +41,9 @@ uint16 decodeRXBytesTmode(uint8* pByte, uint8* pPacket, uint16 packetSize);
 
 void   encodeTXBytesSmode(uint8* pByte, uint8* pPacket, uint16 packetSize);
 uint16 decodeRXBytesSmode(uint8* pByte, uint8* pPacket, uint16 packetSize);
+
+uint16 verifyCrcBytesCmodeA(uint8* pByte, uint8* pPacket, uint16 packetSize);
+uint16 verifyCrcBytesCmodeB(uint8* pByte, uint8* pPacket, uint16 packetSize);
 
 
 #endif

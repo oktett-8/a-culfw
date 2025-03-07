@@ -15,7 +15,6 @@
 
 #include "board.h"
 
-#include "fband.h"
 #include "spi.h"
 #include "cc1100.h"
 #include "clock.h"
@@ -181,7 +180,6 @@ main(void)
   display_channel |= DISPLAY_DOGM;
 #endif
 
-  checkFrequency(); 
   LED_OFF();
 
   sei();
@@ -202,13 +200,12 @@ main(void)
 #ifdef HAS_MORITZ
     rf_moritz_task();
 #endif
+#ifdef HAS_KOPP_FC
+	kopp_fc_task();
+#endif
 #ifdef HAS_MBUS
     rf_mbus_task();
 #endif
-//#ifdef HAS_KOPP_FC
-//    kopp_fc_task();
-// #endif
-
   }
 
 }

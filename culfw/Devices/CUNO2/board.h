@@ -1,8 +1,6 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#include <avr/io.h>
-
 #define HAS_FHT_8v                      // PROGMEM:  434b, RAM: 19b
 #define HAS_FHT_80b                     // PROGMEM: 1158b, RAM:  5b
 #define HAS_FHT_TF
@@ -74,17 +72,12 @@
 #define HAS_ESA
 #define HAS_TX3
 #define HAS_INTERTECHNO
-#define HAS_HOMEEASY
 #define HAS_TCM97001
 #define HAS_HOERMANN
 #define HAS_MORITZ
-#define HAS_MANCHESTER
-#define HAS_REVOLT
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG_SW
-#define HAS_IT
-#define HAS_HMS
 
 #define HAS_IRRX                                //IR Receiption
 #define F_INTERRUPTS            15625   // interrupts per second, min: 10000, max: 20000
@@ -143,6 +136,10 @@
 #define HAS_HELIOS
 #define HELIOS_EMU_HC          "2823" // This is the house code used to address HELIOS space while using F... commands
 #undef  HAS_HELIOS
+
+#ifndef HAS_HELIOS
+#define HAS_HOERMANN_SEND               // Both helios and hoermann use 'h'
+#endif
 
 #ifdef HAS_DMX
 #undef  HAS_IRTX

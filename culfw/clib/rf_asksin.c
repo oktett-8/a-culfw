@@ -1,29 +1,17 @@
-#include <avr/io.h>                     // for _BV, bit_is_set
-#include <stdint.h>                     // for uint8_t, uint32_t
-
-#include "board.h"                      // for HAS_ASKSIN_FUP, etc
-#include "led.h"                        // for SET_BIT
-#include "stringfunc.h"                 // for fromhex
+#include "board.h"
 #ifdef HAS_ASKSIN
-#include <avr/pgmspace.h>               // for pgm_read_byte, PROGMEM, etc
-
-#include "cc1100.h"                     // for ccStrobe, cc1100_readReg, etc
+#include <string.h>
+#include <avr/pgmspace.h>
+#include "cc1100.h"
+#include "delay.h"
+#include "rf_receive.h"
+#include "display.h"
 #include "cc1101_pllcheck.h"
-#include "clock.h"                      // for get_timestamp
-#include "delay.h"                      // for my_delay_ms, my_delay_us
-#include "display.h"                    // for DC, DH2, DNL, DS_P
+#include "clock.h"
+
 #include "rf_asksin.h"
-#include "rf_receive.h"                 // for set_txrestore, REP_BINTIME, etc
-#include "rf_mode.h"
-#include "multi_CC.h"
 
-#ifdef USE_HAL
-#include "hal.h"
-#endif
-
-#ifndef USE_RF_MODE
 uint8_t asksin_on = 0;
-#endif
 
 const uint8_t PROGMEM ASKSIN_CFG[] = {
      0x00, 0x07,
@@ -77,13 +65,8 @@ void
 rf_asksin_init(void)
 {
 
-#ifdef USE_HAL
-  hal_CC_GDO_init(CC_INSTANCE,INIT_MODE_IN_CS_IN);
-  hal_enable_CC_GDOin_int(CC_INSTANCE,FALSE); // disable INT - we'll poll...
-#else
   EIMSK &= ~_BV(CC1100_INT);                 // disable INT - we'll poll...
   SET_BIT( CC1100_CS_DDR, CC1100_CS_PIN );   // CS as output
-#endif
 
   CC1100_DEASSERT;                           // Toggle chip select signal
   my_delay_us(30);
@@ -137,17 +120,11 @@ rf_asksin_task(void)
   uint8_t rssi;
   uint8_t l;
 
-#ifndef USE_RF_MODE
   if(!asksin_on)
     return;
-#endif
 
   // see if a CRC OK pkt has been arrived
-#ifdef USE_HAL
-  if (hal_CC_Pin_Get(CC_INSTANCE,CC_Pin_In)) {
-#else
   if (bit_is_set( CC1100_IN_PORT, CC1100_IN_PIN )) {
-#endif
     msg[0] = cc1100_readReg( CC1100_RXFIFO ) & 0x7f; // read len
 
     if (msg[0] >= MAX_ASKSIN_MSG) {
@@ -182,11 +159,9 @@ rf_asksin_task(void)
     }
     
     msg[l] = msg[l] ^ msg[2];
-
-    MULTICC_PREFIX();
-
-    if (TX_REPORT & REP_BINTIME) {
-
+    
+    if (tx_report & REP_BINTIME) {
+      
       DC('a');
       for (uint8_t i=0; i<=msg[0]; i++)
       DC( msg[i] );
@@ -196,7 +171,8 @@ rf_asksin_task(void)
       
       for (uint8_t i=0; i<=msg[0]; i++)
         DH2( msg[i] );
-      if (TX_REPORT & REP_RSSI)
+      
+      if (tx_report & REP_RSSI)
         DH2(rssi);
       
       DNL();
@@ -233,15 +209,11 @@ asksin_send(char *in)
     return;
   }
 
-#ifdef USE_RF_MODE
-  change_RF_mode(RF_mode_asksin);
-#else
   // in AskSin mode already?
   if(!asksin_on) {
     rf_asksin_init();
     my_delay_ms(3);             // 3ms: Found by trial and error
   }
-#endif
 
   ctl = msg[2];
 
@@ -261,7 +233,6 @@ asksin_send(char *in)
       get_timestamp(&ts2);
       if (((ts2 > ts1) && (ts2 - ts1 > ASKSIN_WAIT_TICKS_CCA)) ||
           ((ts2 < ts1) && (ts1 + ASKSIN_WAIT_TICKS_CCA < ts2))) {
-        MULTICC_PREFIX();
         DS_P(PSTR("ERR:CCA\r\n"));
         goto out;
       }
@@ -296,13 +267,7 @@ out:
       ccStrobe( CC1100_SIDLE );
       ccStrobe( CC1100_SNOP  );
   }
-#ifdef USE_RF_MODE
-  if(!restore_RF_mode()) {
-    do {
-      ccStrobe(CC1100_SRX);
-    } while (cc1100_readReg(CC1100_MARCSTATE) != MARCSTATE_RX);
-  }
-#else
+  
   if(asksin_on) {
     do {
       ccStrobe(CC1100_SRX);
@@ -310,7 +275,6 @@ out:
   } else {
     set_txrestore();
   }
-#endif
 }
 
 void
@@ -326,22 +290,14 @@ asksin_func(char *in)
       asksin_update_mode = 0;
     }
 #endif
-#ifdef USE_RF_MODE
-    set_RF_mode(RF_mode_asksin);
-#else
     rf_asksin_init();
     asksin_on = 1;
-#endif
 
   } else if(in[1] == 's') {         // Send
     asksin_send(in+1);
 
   } else {                          // Off
-#ifdef USE_RF_MODE
-    set_RF_mode(RF_mode_off);
-#else
     asksin_on = 0;
-#endif
 
   }
 }

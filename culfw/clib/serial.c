@@ -1,40 +1,15 @@
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
-
-#include "display.h"
 #include "ringbuffer.h"
 #include "ttydata.h"
-#ifdef USE_HAL
-#include "hal_usart.h"
-#include "cdc.h"
-#endif
-
-//#include "led.h"
+#include "display.h"
+    
+#include "led.h"
 #include "serial.h"
 
 void (*usbinfunc)(void);
 
-#ifdef USE_HAL
-
-void UART_Tx_Callback(void) {
-  static uint8_t TXdata;
-
-  if(!USB_IsConnected) {
-    if (TTY_Tx_Buffer.nbytes) {
-      TXdata = rb_get(&TTY_Tx_Buffer);
-      HAL_UART_Write(UART_NUM, &TXdata, 1);
-    }
-  }
-}
-
-void UART_Rx_Callback(uint8_t data) {
-  if(!USB_IsConnected) {
-    rb_put(&TTY_Rx_Buffer, data);
-  }
-}
-
-#else
 // TX complete (data buffer empty) 
 ISR(USART_UDRE_vect)
 {
@@ -54,7 +29,7 @@ ISR(USART_UDRE_vect)
 ISR(USART_RX_vect)
 {
 
-     //LED_TOGGLE();
+     LED_TOGGLE();
 
      /* read UART status register and UART data register */ 
      uint8_t data = UDR0;
@@ -64,15 +39,9 @@ ISR(USART_RX_vect)
 	  rb_put(&TTY_Rx_Buffer, data);
      
 }
-#endif
 
 void uart_init(unsigned int baudrate) 
 {
-#ifdef USE_HAL
-    HAL_UART_init(UART_NUM);
-    HAL_UART_Set_Baudrate(UART_NUM,baudrate);
-
-#else
      /* Set baud rate */
      if ( baudrate & 0x8000 ) 
      {
@@ -87,8 +56,7 @@ void uart_init(unsigned int baudrate)
     
      /* Set frame format: asynchronous, 8data, no parity, 1stop bit */   
      UCSR0C = (1<<UCSZ00)|(1<<UCSZ01);
-
-#endif
+     
 }
 
 void uart_task(void) 
@@ -99,13 +67,7 @@ void uart_task(void)
 
 void uart_flush(void) 
 {
-#ifdef USE_HAL
-    if (TTY_Tx_Buffer.nbytes && HAL_UART_TX_is_idle(UART_NUM) ) {
-      UART_Tx_Callback();
-    }
-#else
      if (!bit_is_set(UCSR0B, UDRIE0) && TTY_Tx_Buffer.nbytes)
 	  UCSR0B |= _BV(UDRIE0);
-#endif
      
 }

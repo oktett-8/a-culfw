@@ -1,15 +1,13 @@
-Firmware for rpiaddon device
-
-The rpiaddon is a Raspberry Pi Add On board by Damian Melson.
-See
-https://forum.fhem.de/index.php/topic,14156.html
+The rpiaddon is a Raspberry Pi Add On board by Damian Melson. See
+https://github.com/damianmelson/Add-On-Board
+and
+http://forum.fhem.de/index.php/topic,14156.msg89058.html#msg89058
 for details.
 
 FLASHING FIRMWARE
 
-To update firmware with a-culfw execute:
+To update firmware with culfw execute:
 
-	make clean
 	make program
 
 on the raspberry pi. This will require some tools installed upfront. 
@@ -17,8 +15,10 @@ Use:
 
 	apt-get install make avrdude
 
-to flash the recompiled rpiaddon.hex file.
+
+to flash the recompiled rpiaddon.hex file. It has support for InfraRed Rx  
+compiled in.
 
 USING
 
-The a-culfw stack is available on: /dev/ttyAMA0@38400
+The culfw stack is available on: /dev/ttyAMA0@38400

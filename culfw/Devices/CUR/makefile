@@ -20,17 +20,8 @@ SRC = $(TARGET).c                                                  \
 		../../clib/qfs.c                                      \
 		../../clib/fswrapper.c                                \
 		../../clib/stringfunc.c                               \
-		../../clib/fband.c                                    \
 		../../clib/rf_send.c                                  \
 		../../clib/rf_receive.c                               \
-		../../clib/rf_receive_bucket.c                        \
-		../../clib/rf_receive_tcm97001.c                      \
-		../../clib/rf_receive_it.c                            \
-		../../clib/rf_receive_tx3.c                           \
-		../../clib/rf_receive_revolt.c                        \
-		../../clib/rf_receive_esa.c                           \
-		../../clib/rf_receive_hms.c                           \
-		../../clib/helper.c                                   \
 		../../clib/fht.c                                      \
 		../../clib/ttydata.c                                  \
 		../../clib/pcf8833.c                                  \

@@ -1,8 +1,6 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#include <avr/io.h>
-
 #define BUSWARE_COC
 
 #define SPI_PORT		PORTB
@@ -62,16 +60,13 @@
 #define HAS_ESA
 #define HAS_TX3
 #define HAS_INTERTECHNO
-#define HAS_HOMEEASY
 #define HAS_TCM97001
 #define HAS_HOERMANN
 #define HAS_MEMFN
 #define HAS_MBUS
-#define HAS_HMS
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG_SW
-#define HAS_IT
 
 #undef  HAS_RTC
 #define RTC_ADDR                0xd0

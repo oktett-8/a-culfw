@@ -59,30 +59,23 @@
  * ------------------------------------------------------------------------------------------------------------------------------------------------------------
  */
 
-#include <avr/io.h>                     // for _BV, bit_is_set
-#include <stdint.h>                     // for uint8_t, uint16_t, uint32_t
-
-#include "board.h"                      // for CC1100_CS_DDR, etc
-#include "led.h"                        // for SET_BIT
-#include "stringfunc.h"                 // for fromhex
+#include "board.h"
 #ifdef HAS_KOPP_FC
-#include <avr/pgmspace.h>               // for PSTR, PROGMEM, __LPM
-#include <avr/wdt.h>                    // for wdt_reset
-#include <stdlib.h>                     // for strtol, NULL
-#include <string.h>                     // for strlen, strcpy, strncpy
+#include <stdlib.h>				// for strtol
+#include <string.h>
+#include <avr/pgmspace.h>
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <avr/wdt.h>			// for Watchdog Reset
+#include "cc1100.h"
+#include "delay.h"
+#include "rf_receive.h"
+#include "display.h"
+#include "clock.h"
+#include "rf_send.h" //credit_10ms
 
-#include "cc1100.h"                     // for cc1100_sendbyte, etc
-#include "clock.h"                      // for ticks
-#include "delay.h"                      // for my_delay_us, my_delay_ms
-#include "display.h"                    // for DS_P, DH, DH2, DU, DNL, DS
-#include "fband.h"                      // for checkFrequency
-#include "fncollection.h"               // for EE_CC1100_CFG_SIZE, erb, etc
 #include "kopp-fc.h"
-#include "rf_mode.h"
-
-#ifdef USE_HAL
-#include "hal.h"
-#endif
+#include "fncollection.h"
 
 void kopp_fc_sendraw(uint8_t* buf, int longPreamble);
 void kopp_fc_sendAck(uint8_t* enc);
@@ -170,13 +163,8 @@ const PROGMEM const uint8_t CC1100_Kopp_CFG[EE_CC1100_CFG_SIZE] = {
 void
 kopp_fc_init(void)
 {
-#ifdef USE_HAL
-  hal_CC_GDO_init(0,INIT_MODE_IN_CS_IN);
-  hal_enable_CC_GDOin_int(0,FALSE); // disable INT - we'll poll...
-#else
   EIMSK &= ~_BV(CC1100_INT);                 	// disable INT - we'll poll...
   SET_BIT( CC1100_CS_DDR, CC1100_CS_PIN );   	// CS as output
-#endif
 
 // Toggle chip select signal (why?)
   CC1100_DEASSERT;                            	// Chip Select InActiv
@@ -240,14 +228,11 @@ kopp_fc_init(void)
 // Set CC_ON
 	ccStrobe( CC1100_SCAL);						// Calibrate Synthesizer and turn it of. ##Claus brauchen wir das
 	my_delay_ms(1);
-#ifndef USE_RF_MODE
 	cc_on = 1;
-#endif
 
   
 
   kopp_fc_on = 1;								//##Claus may be not needed in future (Tx Only)
-  checkFrequency(); 
 }
 
 // kopp_fc_init  E N D
@@ -274,7 +259,7 @@ void TransmittKoppBlk(uint8_t sendmsg01[15], uint8_t blkTXcode_i)
    int count = 0;
    int count2 = 1;
  
-   //count2 = 1;														// each block / telegram will be written n times (n = 13 see below)
+   count2=1;														// each block / telegram will be written n times (n = 13 see below)
    sendmsg01[3] = blkctr;                                   		// Write BlockCounter (was incremented) and Transmitt Code (=Transmitter Key) to Array
    sendmsg01[4] = blkTXcode_i;                              		// -----------------------------------------------------------------------------------   
 
@@ -670,13 +655,9 @@ uint8_t	recckserr= 0;					                    		// default: No checksum Error !
 
  // RX active, awaiting SYNC
 
-// if (bit_is_set(GDO2_PIN,GDO2_BIT))
-#ifdef USE_HAL
-  if (hal_CC_Pin_Get(0,CC_Pin_In))
-#else
+// if (bit_is_set(GDO2_PIN,GDO2_BIT)) 
  if (bit_is_set( CC1100_IN_PORT, CC1100_IN_PIN ))					// GDO2=CC100_IN_Port sind so konfirguriert, dass dieser aktiv=high wird
 																	// sobald ein kompletter Kopp Block (15 Bytes) oder mehr als 20Bytes im RX-Fifo sind
-#endif
  {
 
   wdt_reset();														// 2016-04-04: ####RaspII Watchdog reset for Feuerdrache to test reset issues

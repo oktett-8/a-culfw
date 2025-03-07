@@ -15,7 +15,6 @@
 
 #include "board.h"
 
-#include "fband.h"
 #include "spi.h"
 #include "cc1100.h"
 #include "clock.h"
@@ -147,7 +146,6 @@ main(void)
   display_channel |= DISPLAY_DOGM;
 #endif
 
-  checkFrequency(); 
   LED_OFF();
 
   sei();

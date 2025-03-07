@@ -37,35 +37,15 @@
 #  define HAS_RAWSEND                   //
 #  define HAS_ASKSIN                    // PROGMEM: 1314
 #  define HAS_ASKSIN_FUP                // PROGMEM:   78
-#  define HAS_KOPP_FC
-#  define HAS_RWE
+#  define HAS_MORITZ                    // PROGMEM: 1696
+#  define HAS_ESA                       // PROGMEM:  286
 #  define HAS_TX3                       // PROGMEM:  168
 #  define HAS_INTERTECHNO               // PROGMEM: 1352
+#  define HAS_TCM97001                  // PROGMEM:  264
 #  define HAS_UNIROLL                   // PROGMEM:   92
 #  define HAS_MEMFN                     // PROGMEM:  168
 #  define HAS_SOMFY_RTS                 // PROGMEM: 1716
-
-#  if defined(_433MHZ)
-#    define HAS_TCM97001                  // PROGMEM:  264
-#    define HAS_IT
-#    define HAS_HOMEEASY
-#    if defined(CUL_V3)
-#      define HAS_MANCHESTER
-#      define HAS_REVOLT
-#    endif
-#    define HAS_BELFOX                    // PROGMEM:  214
-
-#  endif
-
-#if defined(_868MHZ)
-#    define HAS_HMS
-#    if defined(CUL_V3)
-#      define HAS_ESA                     // PROGMEM:  286
-#  endif
-#    define HAS_MORITZ                    // PROGMEM: 1696
-#endif
-
-
+#  define HAS_BELFOX                    // PROGMEM:  214
 #endif
 
 #if defined(CUL_V4)
@@ -75,15 +55,13 @@
 
 #if defined(CUL_V3)
 #  define TTY_BUFSIZE          128      // RAM: TTY_BUFSIZE*4
-#if defined(_868MHZ)
-#  define HAS_MBUS                      // PROGMEM: 2536
-#  define MBUS_NO_TX                       // PROGMEM:  962
+#  undef HAS_MBUS                       // PROGMEM: 4255
+#if defined(HAS_MBUS)
+#  define MBUS_NO_TX                    // PROGMEM:  962
+#endif
 #  define HAS_RFNATIVE                  // PROGMEM:  580
-//#  define LACROSSE_HMS_EMU              // PROGMEM: 2206
 #  define HAS_KOPP_FC                   // PROGMEM: 3370
 #endif
-#endif
-
 
 #if defined(CUL_V3_ZWAVE)
 #  define HAS_ZWAVE                     // PROGMEM:  882
@@ -91,6 +69,7 @@
 #  undef HAS_KOPP_FC
 #  undef HAS_RFNATIVE
 #  define LACROSSE_HMS_EMU              // PROGMEM: 2206
+#  define HAS_EVOHOME
 #endif
 
 
@@ -117,7 +96,6 @@
 #  undef  BOARD_ID_USTR
 #  define BOARD_ID_USTR           L"CUL_HM"
 #  define HAS_INTERTECHNO
-#  define HAS_HMS
 #endif
 
 #ifdef CUL_V2_MAX

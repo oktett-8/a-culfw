@@ -1,26 +1,20 @@
-#include <avr/boot.h>
 #include <avr/pgmspace.h>
-
-#include "uip-conf.h"
-
-#include "apps/dhcpc/dhcpc.h"
+#include <avr/boot.h>
 #include "board.h"
-#include "delay.h"
-#include "display.h"
-#include "drivers/interfaces/network.h"
 #include "ethernet.h"
 #include "fncollection.h"
-#include "led.h"
-#include "mdns_sd.h"
-#include "ntp.h"
 #include "stringfunc.h"
 #include "timer.h"
-#include "uip_arp.h"
+#include "display.h"
+#include "delay.h"
+#include "ntp.h"
+#include "mdns_sd.h"
+#include "led.h"
 
-#ifdef ARM
-#include <avr/eeprom.h>
-#include <utility/trace.h>
-#endif
+#include "uip_arp.h"
+#include "drivers/interfaces/network.h"
+#include "apps/dhcpc/dhcpc.h"
+#include "delay.h"
 
 struct timer periodic_timer, arp_timer;
 static struct uip_eth_addr mac;       // static for dhcpc
@@ -34,10 +28,7 @@ static void ip_initialized(void);
 void
 ethernet_init(void)
 {
-#ifdef ARM
 
-
-#else
   // reset Ethernet
   ENC28J60_RESET_DDR  |= _BV( ENC28J60_RESET_BIT );
   ENC28J60_RESET_PORT &= ~_BV( ENC28J60_RESET_BIT );
@@ -47,8 +38,6 @@ ethernet_init(void)
   ENC28J60_RESET_PORT |= _BV( ENC28J60_RESET_BIT );
 
   my_delay_ms( 200 );
-#endif
-
   network_init();
   mac.addr[0] = erb(EE_MAC_ADDR+0);
   mac.addr[1] = erb(EE_MAC_ADDR+1);
@@ -82,7 +71,7 @@ void
 ethernet_reset(void)
 {
   char buf[21];
-  
+  uint16_t serial = 0;
 
   buf[1] = 'i';
   buf[2] = 'd'; strcpy_P(buf+3, PSTR("1"));             write_eeprom(buf);//DHCP
@@ -93,18 +82,6 @@ ethernet_reset(void)
   buf[2] = 'N'; strcpy_P(buf+3, PSTR("0.0.0.0"));       write_eeprom(buf);//==GW
   buf[2] = 'o'; strcpy_P(buf+3, PSTR("00"));            write_eeprom(buf);//GMT
 
-#ifdef ARM
-  uint32_t fserial = flash_serial();
-
-  buf[2] = 'm'; strcpy_P(buf+3, PSTR("008041"));
-
-  tohex((uint8_t)(fserial>>16 & 0xff), (uint8_t*)buf+9);
-  tohex((uint8_t)(fserial>>8 & 0xff), (uint8_t*)buf+11);
-  tohex((uint8_t)(fserial & 0xff), (uint8_t*)buf+13);
-
-  write_eeprom(buf);//MAC
-
-#else
 #ifdef EE_DUDETTE_MAC
   // check for mac stored during manufacture
   uint8_t *ee = EE_DUDETTE_MAC;
@@ -129,7 +106,6 @@ ethernet_reset(void)
 //  tohex(bsbg(0x10)+bsbg(0x11), (uint8_t*)buf+11);
 //  tohex(bsbg(0x12)+bsbg(0x13), (uint8_t*)buf+13);
 
-  uint16_t serial = 0;
   for (uint8_t i = 0x00; i < 0x20; i++) 
        serial += bsbg(i);
 
@@ -139,7 +115,6 @@ ethernet_reset(void)
   
   buf[15] = 0;
   write_eeprom(buf);
-#endif
 }
 
 static void
@@ -210,13 +185,13 @@ dumppkt(void)
 
 void
 Ethernet_Task(void) {
+     int i;
 
      ethernet_process();
      
      if(timer_expired(&periodic_timer)) {
-
 	  timer_reset(&periodic_timer);
-     int i;	  
+	  
 	  for(i = 0; i < UIP_CONNS; i++) {
 	       uip_periodic(i);
 	       if(uip_len > 0) {
@@ -287,22 +262,6 @@ dhcpc_configured(const struct dhcpc_state *s)
   //resolv_conf(s->dnsaddr);
   uip_udp_remove(s->conn);
   ip_initialized();
-
-#ifdef ARM
-  u8_t * pAddr;
-
-  TRACE_INFO("=== DHCP Configurations ===\n\r");
-  pAddr = (u8_t *)s->ipaddr;
-  TRACE_INFO("- IP   : %d.%d.%d.%d\n\r", pAddr[0], pAddr[1], pAddr[2], pAddr[3]);
-  pAddr = (u8_t *)s->netmask;
-  TRACE_INFO("- Mask : %d.%d.%d.%d\n\r", pAddr[0], pAddr[1], pAddr[2], pAddr[3]);
-  pAddr = (u8_t *)s->default_router;
-  TRACE_INFO("- GW   : %d.%d.%d.%d\n\r", pAddr[0], pAddr[1], pAddr[2], pAddr[3]);
-  pAddr = (u8_t *)s->dnsaddr;
-  TRACE_INFO("- DNS  : %d.%d.%d.%d\n\r", pAddr[0], pAddr[1], pAddr[2], pAddr[3]);
-
-
-#endif
 }
 
 static void

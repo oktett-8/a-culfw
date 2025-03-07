@@ -302,11 +302,11 @@
 #endif
 
 #ifdef unix                                                                 // test on linux/unix
-#include <inttypes.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <inttypes.h>
 
 #define ANALYZE
 #define PROGMEM
@@ -317,7 +317,6 @@
 #ifdef WIN32
 #include <stdio.h>
 #include <string.h>
-
 typedef unsigned char   uint8_t;
 typedef unsigned short  uint16_t;
 #define ANALYZE
@@ -329,7 +328,6 @@ typedef unsigned short  uint16_t;
 #ifdef PIC_CCS_COMPILER
 
 #include <string.h>
-
 typedef unsigned int8   uint8_t;
 typedef unsigned int16  uint16_t;
 #define PROGMEM
@@ -337,12 +335,12 @@ typedef unsigned int16  uint16_t;
 
 #else // AVR:
 
-#include <avr/io.h>
-#include <avr/pgmspace.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
+#include <avr/io.h>
 #include <util/delay.h>
+#include <avr/pgmspace.h>
 
 #endif  // PIC_CCS_COMPILER
 
@@ -3653,14 +3651,14 @@ get_fdc_key (uint16_t cmd)
     static uint8_t key_table[128] =
     {
      // 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
-        0,  '^', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'ÃŸ', 'Â´',  0,  '\b',
-       '\t','q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p', 'Ã¼', '+',  0,   0,  'a',
-       's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'Ã¶', 'Ã¤', '#',  '\r', 0,  '<', 'y', 'x',
+        0,  '^', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'ß', '´',  0,  '\b',
+       '\t','q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p', 'ü', '+',  0,   0,  'a',
+       's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ö', 'ä', '#',  '\r', 0,  '<', 'y', 'x',
        'c', 'v', 'b', 'n', 'm', ',', '.', '-',  0,   0,   0,   0,   0,  ' ',  0,   0,
 
-        0,  'Â°', '!', '"', 'Â§', '$', '%', '&', '/', '(', ')', '=', '?', '`',  0,  '\b',
-       '\t','Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P', 'Ãœ', '*',  0,   0,  'A',
-       'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ã–', 'Ã„', '\'','\r', 0,  '>', 'Y', 'X',
+        0,  '°', '!', '"', '§', '$', '%', '&', '/', '(', ')', '=', '?', '`',  0,  '\b',
+       '\t','Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P', 'Ü', '*',  0,   0,  'A',
+       'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ö', 'Ä', '\'','\r', 0,  '>', 'Y', 'X',
        'C', 'V', 'B', 'N', 'M', ';', ':', '_',  0,   0,   0,   0,   0,  ' ',  0,   0
     };
     static uint8_t state;
@@ -3708,7 +3706,7 @@ get_fdc_key (uint16_t cmd)
                     {
                         switch (cmd)
                         {
-                            case 0x0003: key = 'Â²';     break;
+                            case 0x0003: key = '²';     break;
                             case 0x0008: key = '{';     break;
                             case 0x0009: key = '[';     break;
                             case 0x000A: key = ']';     break;

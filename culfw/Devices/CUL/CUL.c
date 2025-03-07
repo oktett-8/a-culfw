@@ -3,62 +3,71 @@
    Inpired by the MyUSB USBtoSerial demo, Copyright (C) Dean Camera, 2008.
 */
 
-#include <Drivers/USB/HighLevel/../LowLevel/LowLevel.h>  // for USB_Init
-#include <Drivers/USB/HighLevel/USBTask.h>  // for USB_USBTask
-#include <avr/interrupt.h>              // for cli
-#include <avr/io.h>                     // for _BV, bit_is_set
-#include <avr/pgmspace.h>               // for PROGMEM
-#include <avr/wdt.h>                    // for WDTO_2S, wdt_enable
+#include <avr/boot.h>
+#include <avr/power.h>
+#include <avr/eeprom.h>
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <avr/pgmspace.h>
+#include <avr/wdt.h>
 
-#include "board.h"                      // for HAS_ASKSIN, HAS_KOPP_FC, etc
-#include "cc1100.h"                     // for ccreg, ccsetpa
-#include "cdc.h"                        // for CDC_Task
-#include "clock.h"                      // for Minute_Task, gettime
-#include "display.h"                    // for DISPLAY_RFROUTER, etc
-#include "fastrf.h"                     // for FastRF_Task, fastrf_func
-#include "fband.h"                      // for checkFrequency
-#include "fht.h"                        // for fht_init, fhtsend
-#include "fncollection.h"               // for EE_REQBL, etc
-#include "led.h"                        // for LED_OFF, led_init
-#include "rf_receive.h"                 // for RfAnalyze_Task, etc
-#include "rf_router.h"                  // for rf_router_func, etc
-#include "rf_send.h"                    // for em_send, fs20send, hm_send, etc
-#include "spi.h"                        // for spi_init
-#include "ttydata.h"                    // for analyze_ttydata, etc
+#include <string.h>
+
+#include <Drivers/USB/USB.h>     // USB Functionality
+
+#include "spi.h"
+#include "cc1100.h"
+#include "cdc.h"
+#include "clock.h"
+#include "delay.h"
+#include "display.h"
+#include "fncollection.h"
+#include "led.h"		// ledfunc
+#include "ringbuffer.h"
+#include "rf_receive.h"
+#include "rf_send.h"		// fs20send
+#include "ttydata.h"
+#include "fht.h"		// fhtsend
+#include "fastrf.h"		// fastrf_func
+#include "rf_router.h"		// rf_router_func
 
 #ifdef HAS_MEMFN
-#include "memory.h"                     // for getfreemem
+#include "memory.h"		// getfreemem
 #endif
 #ifdef HAS_ASKSIN
-#include "rf_asksin.h"                  // for asksin_func, rf_asksin_task
+#include "rf_asksin.h"
 #endif
 #ifdef HAS_MORITZ
-#include "rf_moritz.h"                  // for moritz_func, rf_moritz_task
+#include "rf_moritz.h"
 #endif
 #ifdef HAS_RWE
-#include "rf_rwe.h"                     // for rf_rwe_task, rwe_func
+#include "rf_rwe.h"
 #endif
 #ifdef HAS_RFNATIVE
-#include "rf_native.h"                  // for native_func, native_task
+#include "rf_native.h"
 #endif
 #ifdef HAS_INTERTECHNO
-#include "intertechno.h"                // for it_func
+#include "intertechno.h"
 #endif
 #ifdef HAS_SOMFY_RTS
-#include "somfy_rts.h"                  // for somfy_rts_func
+#include "somfy_rts.h"
 #endif
 #ifdef HAS_MBUS
-#include "rf_mbus.h"                    // for rf_mbus_func, rf_mbus_task
+#include "rf_mbus.h"
 #endif
 #ifdef HAS_KOPP_FC
-#include "kopp-fc.h"                    // for kopp_fc_func, kopp_fc_task
+#include "kopp-fc.h"
 #endif
 #ifdef HAS_BELFOX
-#include "belfox.h"                     // for send_belfox
+#include "belfox.h"
 #endif
 #ifdef HAS_ZWAVE
-#include "rf_zwave.h"                   // for rf_zwave_task, zwave_func
+#include "rf_zwave.h"
 #endif
+#ifdef HAS_EVOHOME
+#include "rf_evohome.h"
+#endif
+
 
 const PROGMEM t_fntab fntab[] = {
 
@@ -116,6 +125,9 @@ const PROGMEM t_fntab fntab[] = {
   { 'u', rf_router_func },
 #endif
   { 'V', version },
+#ifdef HAS_EVOHOME
+  { 'v', rf_evohome_func },
+#endif
   { 'W', write_eeprom },
   { 'X', set_txreport },
   { 'x', ccsetpa },
@@ -132,7 +144,7 @@ const PROGMEM t_fntab fntab[] = {
 };
 
 
-void static
+void
 start_bootloader(void)
 {
   cli();
@@ -192,7 +204,6 @@ main(void)
   display_channel = DISPLAY_USB;
 #endif
 
-  checkFrequency(); 
   LED_OFF();
 
   for(;;) {
@@ -226,6 +237,9 @@ main(void)
 #endif
 #ifdef HAS_ZWAVE
     rf_zwave_task();
+#endif
+#ifdef HAS_EVOHOME
+    rf_evohome_task();
 #endif
 
   }

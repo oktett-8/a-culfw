@@ -12,18 +12,9 @@ SRC =           CCD.c\
 		../../clib/display.c                                 \
 		../../clib/stringfunc.c                              \
 		../../clib/fncollection.c                            \
-		../../clib/fband.c                                   \
 		../../clib/ringbuffer.c                              \
 		../../clib/rf_send.c                                 \
 		../../clib/rf_receive.c                              \
-		../../clib/rf_receive_bucket.c                       \
-		../../clib/rf_receive_tcm97001.c                     \
-		../../clib/rf_receive_it.c                           \
-		../../clib/rf_receive_tx3.c                          \
-		../../clib/rf_receive_revolt.c                       \
-		../../clib/rf_receive_esa.c                          \
-		../../clib/rf_receive_hms.c                          \
-		../../clib/helper.c                                  \
 		../../clib/rf_router.c                               \
 		../../clib/rf_asksin.c                               \
 		../../clib/rf_moritz.c                               \
@@ -33,14 +24,14 @@ SRC =           CCD.c\
 		../../clib/fht.c                                     \
 		../../clib/fastrf.c                                  \
 		../../clib/ttydata.c                                 \
-		../../clib/serial.c                                  \
+        ../../clib/serial.c                                  \
 		../../clib/spi.c                                     \
 		../../clib/memory.c                                  \
-		../../clib/rf_mbus.c                                 \
-		../../clib/mbus/manchester.c                         \
-		../../clib/mbus/3outof6.c                            \
-		../../clib/mbus/mbus_packet.c                        \
-		../../clib/mbus/crc.c                                \
+                ../../clib/rf_mbus.c                                 \
+                ../../clib/mbus/manchester.c                         \
+                ../../clib/mbus/3outof6.c                            \
+                ../../clib/mbus/mbus_packet.c                        \
+                ../../clib/mbus/crc.c                                \
 
 
 LUFA_OPTS  = -D USE_NONSTANDARD_DESCRIPTOR_NAMES

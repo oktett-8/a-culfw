@@ -13,7 +13,6 @@
 
 #include <string.h>
 
-#include "fband.h"
 #include "board.h"
 #include "private_channel.h"
 #include "rf_receive.h"
@@ -202,6 +201,7 @@ void pin_set( uint8_t value ) {
 }
 
 int main(void) {
+  int16_t d;
   uint8_t loop = 0;
 
   wdt_disable();
@@ -221,7 +221,6 @@ int main(void) {
   xled_pattern=0x0000;
 
   wdt_enable(WDTO_2S);
-  checkFrequency();
 
   is_on = 1;
  

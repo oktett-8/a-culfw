@@ -9,10 +9,7 @@ FLASHING FIRMWARE
 
 To update firmware with culfw execute:
 
-	make program-433
-  or
-  make program-868
-  or use the script ./flash.sh
+	make program
 
 on the a computer which has the avr toolchain installed. This will require some tools installed upfront. 
 Use:
@@ -25,6 +22,3 @@ to flash the recompiled nanoCUL.hex file.
 USING
 
 The culfw stack is available on: /dev/ttyUSBx, where x is a number.
-
-
-
