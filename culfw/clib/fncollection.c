@@ -1,42 +1,23 @@
-#include "board.h"                      // IWYU pragma: keep
+#include <avr/eeprom.h>
+#include <avr/wdt.h>
+#include <avr/interrupt.h>
 
-#include <avr/eeprom.h>                 // for __eerd_byte_UNKNOWN, etc
-#include <avr/interrupt.h>              // for cli
-#include <avr/io.h>                     // for bit_is_set
-#include <avr/pgmspace.h>               // for PSTR
-
-#ifndef bit_is_set
-#include <avr/sfr_defs.h>               // for bit_is_set
-#endif
-#include <stdint.h>                     // for uint8_t, uint16_t, int8_t
-
-#include "../version.h"                 // for VERSION_1, VERSION_2, etc
-#include "cc1100.h"                     // for cc_factory_reset
-#include "cdc_uart.h"                   // for EE_write_baud
-#include "display.h"                    // for DC, DS_P, DH2, DNL, DU, DH
-#include "fband.h"                      // for checkFrequency, IS433MHZ
-#include "fncollection.h"
-#include "led.h"                        // for LED_OFF, LED_ON
-#include "qfs.h"                        // for fs_sync
-#include "stringfunc.h"                 // for fromhex, fromip, fromdec
-#include "hw_autodetect.h"
-#ifdef HAS_USB
-#ifdef SAM7
-#include <usb/device/cdc-serial/CDCDSerialDriver.h>
-#include <utility/trace.h>
+#include "board.h"
+#include "display.h"
 #include "delay.h"
-#elif defined STM32
-#include "usb_device.h"
-#else
-#include <Drivers/USB/LowLevel/LowLevel.h>  // for USB_ShutDown
+#include "fncollection.h"
+#include "cc1100.h"
+#include "../version.h"
+#ifdef HAS_USB
+#include <Drivers/USB/USB.h>
 #endif
-#endif
-#include <avr/wdt.h>                    // for WDTO_15MS, wdt_enable
-
-#include "ethernet.h"                   // for ethernet_reset
-#include "fswrapper.h"                  // for fs
-#include "mysleep.h"                    // for sleep_time
-#include "multi_CC.h"
+#include "clock.h"
+#include "mysleep.h"
+#include "fswrapper.h"
+#include "fastrf.h"
+#include "rf_router.h"
+#include "ethernet.h"
+#include <avr/wdt.h>
 
 uint8_t led_mode = 2;   // Start blinking
 
@@ -44,15 +25,6 @@ uint8_t led_mode = 2;   // Start blinking
 #include "xled.h"
 #endif
 
-#if defined(CDC_COUNT) && CDC_COUNT > 1
-#include "cdc_uart.h"                   // for EE_write_baud
-#endif
-
-#if defined STM32
-#define RTC_BOOTLOADER_FLAG 0x424C
-#define RTC_BOOTLOADER_JUST_UPLOADED 0x424D
-#include <stm32f103xb.h>
-#endif
 //////////////////////////////////////////////////
 // EEprom
 
@@ -90,7 +62,7 @@ display_ee_mac(uint8_t *a)
   display_ee_bytes( a, 6 );
 }
 
-#if defined(HAS_ETHERNET) | defined(HAS_WIZNET)
+#ifdef HAS_ETHERNET
 static void
 display_ee_ip4(uint8_t *a)
 {
@@ -110,7 +82,7 @@ read_eeprom(char *in)
   uint8_t hb[2], d;
   uint16_t addr;
 
-#if defined(HAS_ETHERNET) | defined(HAS_WIZNET)
+#ifdef HAS_ETHERNET
   if(in[1] == 'i') {
            if(in[2] == 'm') { display_ee_mac(EE_MAC_ADDR);
     } else if(in[2] == 'd') { DH2(erb(EE_USE_DHCP));
@@ -134,23 +106,6 @@ read_eeprom(char *in)
     else
       addr = hb[0];
 
-#ifdef HAS_MULTI_CC
-#if NUM_SLOWRF > 1
-    if(CC1101.instance == 1) {
-      if((addr >= (uint32_t)EE_CC1100_CFG) && (addr < (uint32_t)EE_CC1100_CFG + EE_CC1100_CFG_SIZE)) {
-        addr = addr - (uint32_t)EE_CC1100_CFG + (uint32_t)EE_CC1100_CFG1;
-      }
-    }
-#endif
-#if NUM_SLOWRF > 2
-    if(CC1101.instance == 2) {
-      if((addr >= (uint32_t)EE_CC1100_CFG) && (addr < (uint32_t)EE_CC1100_CFG + EE_CC1100_CFG_SIZE)) {
-        addr = addr - (uint32_t)EE_CC1100_CFG + (uint32_t)EE_CC1100_CFG2;
-      }
-    }
-#endif
-#endif
-
     d = erb((uint8_t *)addr);
     DC('R');                    // prefix
     DH(addr,4);                 // register number
@@ -167,7 +122,7 @@ write_eeprom(char *in)
 {
   uint8_t hb[6], d = 0;
 
-#if defined(HAS_ETHERNET) | defined(HAS_WIZNET)
+#ifdef HAS_ETHERNET
   if(in[1] == 'i') {
     uint8_t *addr = 0;
            if(in[2] == 'm') { d=6; fromhex(in+3,hb,6); addr=EE_MAC_ADDR;
@@ -197,28 +152,8 @@ write_eeprom(char *in)
       addr = hb[0];
     else
       addr = (hb[0] << 8) | hb[1];
-
-#ifdef HAS_MULTI_CC
-#if NUM_SLOWRF > 1
-    if(CC1101.instance == 1) {
-      if((addr >= (uint32_t)EE_CC1100_CFG) && (addr < (uint32_t)EE_CC1100_CFG + EE_CC1100_CFG_SIZE)) {
-        addr = addr - (uint32_t)EE_CC1100_CFG + (uint32_t)EE_CC1100_CFG1;
-      }
-    }
-#endif
-#if NUM_SLOWRF > 2
-    if(CC1101.instance == 2) {
-      if((addr >= (uint32_t)EE_CC1100_CFG) && (addr < (uint32_t)EE_CC1100_CFG + EE_CC1100_CFG_SIZE)) {
-        addr = addr - (uint32_t)EE_CC1100_CFG + (uint32_t)EE_CC1100_CFG2;
-      }
-    }
-#endif
-#endif
-
+      
     ewb((uint8_t*)addr, hb[d-1]);
-
-    if (addr == 15 || addr == 16 || addr == 17)
-      checkFrequency();
 
     // If there are still bytes left, then write them too
     in += (2*d+1);
@@ -272,7 +207,6 @@ eeprom_factory_reset(char *in)
   ewb(EE_MAGIC_OFFSET+1, VERSION_2);
 
   cc_factory_reset();
-  checkFrequency();
 
   ewb(EE_RF_ROUTER_ID, 0);
   ewb(EE_RF_ROUTER_ROUTER, 0);
@@ -284,7 +218,7 @@ eeprom_factory_reset(char *in)
   ewb(EE_BRIGHTNESS, 0x80);
   ewb(EE_SLEEPTIME, 30);
 #endif
-#if defined(HAS_ETHERNET) | defined(HAS_WIZNET)
+#ifdef HAS_ETHERNET
   ethernet_reset();
 #endif
 #ifdef HAS_FS
@@ -293,11 +227,6 @@ eeprom_factory_reset(char *in)
 #ifdef HAS_RF_ROUTER
   ewb(EE_RF_ROUTER_ID, 0x00);
   ewb(EE_RF_ROUTER_ROUTER, 0x00);
-#endif
-
-#ifdef HAS_WIZNET
-  EE_write_baud(0,CDC_BAUD_RATE);
-  EE_write_baud(1,CDC_BAUD_RATE);
 #endif
 
   if(in[1] != 'x')
@@ -349,39 +278,6 @@ prepare_boot(char *in)
   if(bl == 0xff)             // Allow testing
     while(1);
     
-#ifdef SAM7
-
-	unsigned char volatile * const ram = (unsigned char *) AT91C_ISRAM;
-
-	//Reset
-	if(bl)
-		*ram = 0xaa;		// Next reboot we'd like to jump to the bootloader.
-
-	USBD_Disconnect();
-	my_delay_ms(250);
-	my_delay_ms(250);
-	my_delay_ms(250);
-	my_delay_ms(250);
-	AT91C_BASE_RSTC->RSTC_RCR = AT91C_RSTC_PROCRST | AT91C_RSTC_PERRST | AT91C_RSTC_EXTRST   | 0xA5<<24;
-	while (1);
-
-#elif defined STM32
-	USBD_Disconnect();
-
-	RCC->APB1ENR |= (RCC_APB1ENR_PWREN | RCC_APB1ENR_BKPEN);
-	    PWR->CR |= PWR_CR_DBP;
-	if(bl) {
-	  // Next reboot we'd like to jump to the bootloader.
-    BKP->DR10 = RTC_BOOTLOADER_FLAG;
-	} else {
-    BKP->DR10 = RTC_BOOTLOADER_JUST_UPLOADED;
-	}
-	PWR->CR &=~ PWR_CR_DBP;
-
-	wdt_enable(WDTO_2S);
-
-	while (1);                 // go to bed, the wathchdog will take us to reset
-#else
   if(bl)                     // Next reboot we'd like to jump to the bootloader.
     ewb( EE_REQBL, 1 );      // Simply jumping to the bootloader from here
                              // wont't work. Neither helps to shutdown USB
@@ -400,13 +296,11 @@ prepare_boot(char *in)
   
   wdt_enable(WDTO_15MS);       // Make sure the watchdog is running 
   while (1);                 // go to bed, the wathchdog will take us to reset
-#endif
 }
 
 void
 version(char *in)
 {
-  MULTICC_PREFIX();
 #if defined(CUL_HW_REVISION)
   if (in[1] == 'H') {
     DS_P( PSTR(CUL_HW_REVISION) );
@@ -414,27 +308,13 @@ version(char *in)
     return;
   }
 #endif
-  DS_P( PSTR("V " VERSION " " FW_NAME " Build: " BUILD_NUMBER " (" BUILD_DATE ") "));
+
 #ifdef MULTI_FREQ_DEVICE     // check 433MHz version marker
   if (!bit_is_set(MARK433_PIN, MARK433_BIT))
-     DS_P( PSTR(BOARD_ID_STR433) );
+    DS_P( PSTR("V " VERSION " " BOARD_ID_STR433) );
   else
 #endif
-    DS_P( PSTR(BOARD_ID_STR) );
-#ifdef USE_HW_AUTODETECT
-  DC('_');
-  DH2(get_hw_features());
-#endif
-  if (IS433MHZ) {
-     DS_P( PSTR(" (F-Band: 433MHz)") );
-  } else {
-     DS_P( PSTR(" (F-Band: 868MHz)") );
-  }
-#ifdef HAS_I2CSLAVE
-		DS_P( PSTR(" (I2C: 0x") );
-		display_hex2(i2cSlaveAddr);
-		DS_P( PSTR(")") );
-#endif	
+  DS_P( PSTR("V " VERSION " " BOARD_ID_STR) );
   DNL();
 }
 

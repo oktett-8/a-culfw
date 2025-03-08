@@ -1,16 +1,14 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#include <avr/io.h>
 #include <stdint.h>
 
 /* if you have an Arduino with only 8MHz disable the next line */
 #define HAS_16MHZ_CLOCK
 
 /* if you are using a CC1101 module for 868MHz disable the next line */
-#if defined (nanoCUL433)
 #define HAS_CC1100_433
-#endif
+
 
 #define SPI_PORT		PORTB
 #define SPI_DDR			DDRB
@@ -88,9 +86,10 @@ extern const uint8_t mark433_pin;
 #define HAS_ASKSIN
 /* Intertechno Senden einschalten */
 #define HAS_INTERTECHNO
-
-
-
+#define HAS_TCM97001
+/* Intertechno Empfang einschalten */
+#define HAS_IT
+#define HAS_REVOLT
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG_SW
@@ -100,41 +99,22 @@ extern const uint8_t mark433_pin;
 */
 //#define HAS_MBUS
 
-#  define HAS_TX3
-#  define HAS_UNIROLL
+#define HAS_ASKSIN_FUP
+#define HAS_MORITZ
+#define HAS_RWE
+#define HAS_ESA
+#define HAS_TX3
+#define HAS_UNIROLL
+#define HAS_HOERMANN
+#define HAS_HOERMANN_SEND
+#define HAS_MEMFN
+#define HAS_SOMFY_RTS
+#define HAS_FHT_80b                     // PROGMEM: 1374b, RAM: 90b
+#define HAS_FHT_8v                    // PROGMEM:  586b  RAM: 23b
+#define HAS_FHT_TF
+#define FHTBUF_SIZE          174      //                 RAM: 174b
+#define HAS_KOPP_FC
+#define HAS_ZWAVE                     // PROGMEM:  882
 
-//#  define HAS_SOMFY_RTS
-#  define HAS_RFNATIVE
-
-//#  define HAS_MEMFN
-
-#if defined (nanoCUL433)
-/* Intertechno Empfang einschalten */
-#  define HAS_IT
-#  define HAS_REVOLT
-#  define HAS_TCM97001
-#  define HAS_HOMEEASY
-#  define HAS_BELFOX
-#  define HAS_MANCHESTER
-#endif
-
-#if defined (nanoCUL868)
-#  define HAS_ASKSIN_FUP
-#  define HAS_MORITZ
-#  define HAS_RWE
-#  define HAS_ESA
-//#  define HAS_HOERMANN
-//#  define HAS_HOERMANN_SEND
-#  define HAS_HMS
-#  define OFF_LACROSSE_HMS_EMU          // if you like HMS emulation for LaCrosse temp devices
-
-//#define HAS_SOMFY_RTS
-//#define HAS_FHT_80b                     // PROGMEM: 1374b, RAM: 90b
-//#define HAS_FHT_8v                    // PROGMEM:  586b  RAM: 23b
-//#define HAS_FHT_TF
-//#define FHTBUF_SIZE          174      //                 RAM: 174b
-//#define HAS_KOPP_FC
-//#define HAS_ZWAVE                     // PROGMEM:  882
-#endif
 
 #endif

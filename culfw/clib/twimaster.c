@@ -6,12 +6,13 @@
 * Target:   any AVR device with hardware TWI 
 * Usage:    API compatible with I2C Software Library i2cmaster.h
 **************************************************************************/
-#include <avr/pgmspace.h>
-#include <compat/twi.h>
 #include <inttypes.h>
-#include <stdio.h>
+#include <compat/twi.h>
 
 #include "i2cmaster.h"
+
+#include <avr/pgmspace.h>
+#include <stdio.h>
 
 /* I2C clock in Hz */
 #define SCL_CLOCK  100000L

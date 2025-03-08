@@ -1,32 +1,28 @@
-#include <avr/pgmspace.h>               // for __LPM
-#include <stdint.h>                     // for uint8_t, uint16_t
-
-#include "board.h"                      // for TTY_BUFSIZE
+#include "board.h"
 #include "display.h"
-#include "ringbuffer.h"                 // for rb_t, rb_put
-#include "stringfunc.h"                 // for fromhex
+#include "ringbuffer.h"
 #ifdef HAS_USB
-#include "cdc.h"                        // for CDC_Task, USB_IsConnected
+#include "cdc.h"
 #else
 #include "serial.h"
 #endif
-#include "fht.h"                        // for fht_hc0, fht_hc1
-#include "log.h"                        // for LOG_NETTOLINELEN, Log
-#include "pcf8833.h"                    // for TITLE_LINECHARS, etc
-#include "rf_router.h"                  // for RFR_Buffer, etc
-#include "ttydata.h"                    // for TTY_Tx_Buffer, callfn
+#include "led.h"
+#include "delay.h"
+#include "pcf8833.h"
+#include "ttydata.h"            // callfn
+#include "fht.h"                // fht_hc
+#include "rf_router.h"
+#include "clock.h"
+#include "log.h"
 
 #ifdef HAS_PRIVATE_CHANNEL
-#include "private_channel.h"            // for private_putchar
+#include "private_channel.h"
 #endif
 #ifdef HAS_ETHERNET
-#include "tcplink.h"                    // for tcp_putchar
-#endif
-#ifdef HAS_WIZNET
-#include "ethernet.h"                   // for NET_Tx_Buffer
+#include "tcplink.h"
 #endif
 #ifdef HAS_DOGM
-#include "dogm16x.h"                    // for dogm_putchar
+#include "dogm16x.h"
 #endif
 uint8_t log_enabled = 0;
 
@@ -88,11 +84,6 @@ display_char(char data)
     tcp_putchar( data );
 #endif
 
-#ifdef HAS_WIZNET
-  if(display_channel & DISPLAY_TCP)
-    rb_put(&NET_Tx_Buffer, data);
-#endif
-
 #ifdef HAS_PRIVATE_CHANNEL
     private_putchar( data );
 #endif
@@ -113,12 +104,8 @@ display_char(char data)
   }
 #endif
 
-#if defined(HAS_UART) || defined(HAS_I2CSLAVE)
-#ifdef ARM
-  if(!USB_IsConnected && (display_channel & DISPLAY_USB)) {
-#else
+#ifdef HAS_UART
   if(display_channel & DISPLAY_USB) {
-#endif
     if((TTY_Tx_Buffer.nbytes  < TTY_BUFSIZE-2) ||
        (TTY_Tx_Buffer.nbytes  < TTY_BUFSIZE && (data == '\r' || data == '\n')))
     rb_put(&TTY_Tx_Buffer, data);

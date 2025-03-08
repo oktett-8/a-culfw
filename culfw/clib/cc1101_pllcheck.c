@@ -1,11 +1,13 @@
-#include <avr/pgmspace.h>               // for PSTR
-#include <stdint.h>                     // for uint8_t
+#include "board.h"
+ 
+#include <avr/io.h>
+#include "cc1100.h"
+#include "delay.h"
+#include "display.h"
+#include "fncollection.h"
 
-#include "cc1100.h"                     // for cc1100_readReg, ccStrobe, etc
 #include "cc1101_pllcheck.h"
-#include "delay.h"                      // for my_delay_us
-#include "display.h"                    // for DS_P
-#include "multi_CC.h"
+
 
 #ifdef HAS_CC1101_PLL_LOCK_CHECK_MSG_SW
 uint8_t disable_PLLNOLOCK_MSG = 0;				// do not display PLLNOLOCK related errors if > 0
@@ -24,12 +26,8 @@ cc1101_checkPLL(void)  // noansi: returns 0 on success
 
 #ifdef HAS_CC1101_PLL_LOCK_CHECK_MSG
 # ifdef HAS_CC1101_PLL_LOCK_CHECK_MSG_SW
-	if (!disable_PLLNOLOCK_MSG) {
-	  MULTICC_PREFIX();
-	  DS_P( PSTR( "PLL0\r\n" ) );			            // PLL0 -> PLL Lock problem found. Message gives enough time to switch to IDLE state
-	}	else {
-	  ccStrobe( CC1100_SNOP );									// wait a moment to give time to switch to IDLE state, this should be enough
-	}
+	if (!disable_PLLNOLOCK_MSG) DS_P( PSTR( "PLL0\r\n" ) );			// PLL0 -> PLL Lock problem found. Message gives enough time to switch to IDLE state
+	else ccStrobe( CC1100_SNOP );									// wait a moment to give time to switch to IDLE state, this should be enough
 # else
 	DS_P( PSTR( "PLL0\r\n" ) );										// PLL0 -> PLL Lock problem found. Message gives enough time to switch to IDLE state
 # endif
@@ -48,10 +46,7 @@ cc1101_checkPLL(void)  // noansi: returns 0 on success
 
 #ifdef HAS_CC1101_PLL_LOCK_CHECK_MSG
 # ifdef HAS_CC1101_PLL_LOCK_CHECK_MSG_SW
-	if (!disable_PLLNOLOCK_MSG) {
-	  MULTICC_PREFIX();
-	  DS_P( PSTR( "PLL1\r\n" ) );			            // PLL1 -> Failed to recover from PLL Lock problem
-	}
+	if (!disable_PLLNOLOCK_MSG) DS_P( PSTR( "PLL1\r\n" ) );			// PLL1 -> Failed to recover from PLL Lock problem
 # else
 	DS_P( PSTR( "PLL1\r\n" ) );										// PLL1 -> Failed to recover from PLL Lock problem
 # endif

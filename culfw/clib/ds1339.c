@@ -1,10 +1,9 @@
-#include <avr/interrupt.h>
-#include <avr/io.h>
-
+#include "i2cmaster.h"
 #include "board.h"
 #include "display.h"
 #include "ds1339.h"
-#include "i2cmaster.h"
+#include <avr/interrupt.h>
+#include <avr/io.h>
 
 
 unsigned char rtc_read(unsigned char addr);

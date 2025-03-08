@@ -23,8 +23,8 @@
 #ifndef _DATAFLASH_H
 #define _DATAFLASH_H
 
-#include <board.h>
 #include <stdint.h>
+#include <board.h>
 
 /* for AT45DB161B (older revision, without the low-speed mode,
  * define SUPPORT_AT45DB161B */

@@ -4,33 +4,32 @@
  * License: GPL v2
  */
 
-#include <avr/interrupt.h>              // for cli, sei
-#include <avr/pgmspace.h>               // for PSTR
-#include <avr/io.h>                     // for _BV
-#include <stdint.h>                     // for int8_t
-#include <util/parity.h>                // for parity_even_bit
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <stdio.h>
+#include <util/parity.h>
+#include <string.h>
 
-#include "board.h"                      // for HAS_MORITZ, HAS_RAWSEND, etc
-#include "cc1100.h"                     // for CC1100_CLEAR_OUT, etc
-#include "delay.h"                      // for my_delay_us, my_delay_ms
-#include "display.h"                    // for DS_P
-#include "led.h"                        // for LED_OFF, LED_ON
-#include "rf_receive.h"                 // for cksum1, cksum2, cksum3, etc
+#include "board.h"
+#include "delay.h"
 #include "rf_send.h"
-#include "stringfunc.h"                 // for fromhex
-#include "rf_mode.h"
-#include "i2cslave.h"										// for TWCR_INIT, TWCR_OFF
+#include "rf_receive.h"
+#include "led.h"
+#include "cc1100.h"
+#include "display.h"
+#include "fncollection.h"
+#include "fht.h"
 
 #ifdef HAS_DMX
-#include "dmx.h"                        // for dmx_fs20_emu
+#include "dmx.h"
 #endif
 
 #ifdef HAS_HELIOS
-#include "helios.h"                     // for helios_fs20_emu
+#include "helios.h"
 #endif
 
 #ifdef HAS_MORITZ
-#include "rf_moritz.h"                  // for moritz_on, rf_moritz_init
+#include "rf_moritz.h"
 #endif
 
 // For FS20 we time the complete message, for KS300 the rise-fall distance
@@ -70,10 +69,10 @@ uint16_t credit_10ms;
   static void
   send_bit(uint8_t bit)
   {
-    CC1100_SET_OUT;         // High
+    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
     my_delay_us(bit ? TMUL(onehigh) : TMUL(zerohigh));
 
-    CC1100_CLEAR_OUT;       // Low
+    CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
     my_delay_us(bit ? TMUL(onelow) : TMUL(zerolow));
   }
 
@@ -85,10 +84,10 @@ uint16_t credit_10ms;
   static void
   send_bit(uint8_t bit)
   {
-    CC1100_SET_OUT;         // High
+    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
     my_delay_us(bit ? FS20_ONE : FS20_ZERO);
 
-    CC1100_CLEAR_OUT;       // Low
+    CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
     my_delay_us(bit ? FS20_ONE : FS20_ZERO);
   }
 
@@ -110,16 +109,10 @@ sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bitoff,
 
   LED_ON();
 
-#if defined (HAS_IRRX) || defined (HAS_IRTX) || defined (HAS_I2CSLAVE) // Block IR_Reception
+#if defined (HAS_IRRX) || defined (HAS_IRTX) // Block IR_Reception
   cli();
-#  if defined (HAS_I2CSLAVE) // Disable I2C
-    TWCR_OFF;
-#  endif		
 #endif
 
-#ifdef USE_RF_MODE
-  change_RF_mode(RF_mode_slow);
-#else
 #ifdef HAS_MORITZ
   uint8_t restore_moritz = 0;
   if(moritz_on) {
@@ -128,17 +121,17 @@ sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bitoff,
     set_txreport("21");
   }
 #endif
+
   if(!cc_on)
     set_ccon();
-#endif
   ccTX();                                       // Enable TX 
   do {
 
     if(addH>0 || addL>0) {
-      CC1100_SET_OUT;         // High
+      CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);        // High
       my_delay_us(TMUL(addH));
 
-      CC1100_CLEAR_OUT;       // Low
+      CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
       my_delay_us(TMUL(addL));
     }
 
@@ -158,26 +151,19 @@ sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bitoff,
 
   } while(--repeat > 0);
 
-  if(TX_REPORT) {                               // Enable RX
+  if(tx_report) {                               // Enable RX
     ccRX();
   } else {
     ccStrobe(CC1100_SIDLE);
   }
 
-#if defined (HAS_IRRX) || defined (HAS_IRTX) || defined(HAS_I2CSLAVE) // Activate IR_Reception
+#if defined (HAS_IRRX) || defined (HAS_IRTX) // Activate IR_Reception
   sei(); 
-#  if defined (HAS_I2CSLAVE) // Enable TWI again
-    TWCR_INIT;
-#  endif				
 #endif
 
-#ifdef USE_RF_MODE
-  restore_RF_mode();
-#else
 #ifdef HAS_MORITZ
   if(restore_moritz)
     rf_moritz_init();
-#endif
 #endif
 
   LED_OFF();

@@ -16,7 +16,6 @@
 
 #include <Drivers/USB/USB.h>     // USB Functionality
 
-#include "fband.h"
 #include "spi.h"
 #include "cc1100.h"
 #include "cdc.h"
@@ -180,7 +179,6 @@ main(void)
   input_handle_func = analyze_ttydata;
   display_channel = DISPLAY_USB;
 
-  checkFrequency(); 
   LED_OFF();
 
   for(;;) {

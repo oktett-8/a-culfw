@@ -1,19 +1,14 @@
-#include <avr/pgmspace.h>               // for PSTR, __LPM, PROGMEM
-#include <stdint.h>                     // for uint8_t, int16_t, uint16_t
-#include <string.h>                     // for strlen
-
-#include "board.h"                      // for FHTBUF_SIZE, HAS_FHT_TF, etc
-#include "cc1100.h"                     // for ccRX, ccStrobe, etc
-#include "delay.h"                      // for my_delay_ms
-#include "display.h"                    // for DH2, DC, DS_P, DNL
+#include <string.h>
+#include <avr/eeprom.h>
+#include "board.h"
+#include "rf_send.h"
+#include "rf_receive.h"
+#include "fncollection.h"
+#include "display.h"
 #include "fht.h"
-#include "fncollection.h"               // for EE_FHTID, erb, ewb
-#include "rf_receive.h"                 // for tx_report, REP_FHTPROTO, etc
-#include "rf_send.h"                    // for addParityAndSendData, etc
-#include "stringfunc.h"                 // for fromhex
-#include "rf_mode.h"
-#include "multi_CC.h"
-#include "fband.h"
+#include "delay.h"
+#include "clock.h"
+#include "cc1100.h"
 
 // We have three different work models:
 
@@ -106,14 +101,14 @@ fht_display_buf(uint8_t ptr[])
   DH2(fht80b_state);
   DC(' ');
 #else
-  if(!(TX_REPORT & REP_FHTPROTO))
+  if(!(tx_report & REP_FHTPROTO))
     return;
 #endif
 
   DC('T');
   for(uint8_t i = 0; i < 5; i++)
     DH2(ptr[i]);
-  if(TX_REPORT & REP_RSSI)
+  if(tx_report & REP_RSSI)
     DH2(250);
   DNL();
 #ifdef FHTDEBUG
@@ -158,10 +153,6 @@ fhtsend(char *in)
   l = fromhex(in+1, hb, 5);
 
   if(l < 4) {
-#ifdef HAS_MULTI_CC
-    if((hb[0] != 1) || (l != 3))
-      multiCC_prefix();
-#endif
     if(hb[0] == 1) {                   // Set housecode, clear buffers
       if(l == 3) {
         ewb(EE_FHTID  , hb[1]);        // 1.st byte: 80b relevant
@@ -334,10 +325,8 @@ fhtsend(char *in)
 #endif
 
 #ifdef HAS_FHT_80b
-  if(!fht_addbuf(in)) {               // FHT80b mode: Queue everything
-    MULTICC_PREFIX();
+  if(!fht_addbuf(in))                  // FHT80b mode: Queue everything
     DS_P( PSTR("EOB\r\n") );
-  }
 #endif
 
 }
@@ -492,14 +481,6 @@ void
 fht80b_timer(void)
 {
   if(fht80b_repeatcnt) {
-#ifdef HAS_MULTI_CC
-    for(CC1101.instance=0; CC1101.instance < HAS_MULTI_CC; CC1101.instance++) {
-      if((CC1101.RF_mode[CC1101.instance] == RF_mode_slow) && IS868MHZ )
-        break;
-    }
-    if(!(CC1101.instance < HAS_MULTI_CC))
-        CC1101.instance=0;
-#endif
     fht80b_sendpacket();
     fht80b_timeout = 41;               // repeat if there is no msg for 0.3sec
     fht80b_repeatcnt--;

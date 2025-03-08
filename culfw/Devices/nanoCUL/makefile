@@ -1,43 +1,32 @@
 MCU = atmega328p
-FLASH_SIZE = 32768
-BOOTLOADER_SIZE = 2048
+BOARD  =
 F_CPU = 8000000
 FORMAT = ihex
+TARGET = nanoCUL
 OBJDIR = .
 
+VERS=1.61
 DATE=$(shell date +%Y-%m-%d)
-DESTDIR=culfw-nanoCUL
+DESTDIR=culfw-nanoCUL.$(VERS)
 
 #		../../clib/adcw.c                                    \
 #		../../clib/cctemp.c                                  \
 
-SRC = nanoCUL.c                                            \
+SRC = $(TARGET).c                                            \
 		../../clib/cc1100.c                                  \
-		../../clib/cc1101_pllcheck.c                         \
+		../../clib/cc1101_pllcheck.c                                  \
 		../../clib/clock.c                                   \
-		../../clib/belfox.c                                  \
 		../../clib/delay.c                                   \
 		../../clib/display.c                                 \
 		../../clib/stringfunc.c                              \
 		../../clib/fncollection.c                            \
-		../../clib/fband.c                                   \
 		../../clib/ringbuffer.c                              \
 		../../clib/fht.c                                     \
 		../../clib/rf_send.c                                 \
 		../../clib/rf_receive.c                              \
-		../../clib/rf_receive_bucket.c                       \
-		../../clib/rf_receive_tcm97001.c                     \
-		../../clib/rf_receive_it.c                           \
-		../../clib/rf_receive_tx3.c                          \
-		../../clib/rf_receive_revolt.c                       \
-		../../clib/rf_receive_esa.c                          \
-		../../clib/rf_receive_hms.c                          \
-		../../clib/rf_native.c                               \
-		../../clib/lacrosse.c                                \
-		../../clib/helper.c                                  \
 		../../clib/rf_asksin.c                               \
 		../../clib/rf_moritz.c                               \
-		../../clib/rf_rwe.c                                  \
+		../../clib/rf_rwe.c                               \
 		../../clib/somfy_rts.c                               \
 		../../clib/fastrf.c                               \
 		../../clib/rf_zwave.c                                \
@@ -47,11 +36,11 @@ SRC = nanoCUL.c                                            \
 		../../clib/serial.c                                  \
 		../../clib/ttydata.c                                 \
 		../../clib/spi.c                                     \
-		../../clib/rf_mbus.c                                 \
-		../../clib/mbus/manchester.c                         \
-		../../clib/mbus/3outof6.c                            \
-		../../clib/mbus/mbus_packet.c                        \
-		../../clib/mbus/crc.c                                \
+                ../../clib/rf_mbus.c                                 \
+                ../../clib/mbus/manchester.c                         \
+                ../../clib/mbus/3outof6.c                            \
+                ../../clib/mbus/mbus_packet.c                        \
+                ../../clib/mbus/crc.c                                \
 
 
 OPT = s
@@ -62,6 +51,7 @@ CDEFS  = -DF_CPU=$(F_CPU)UL
 
 ADEFS = -DF_CPU=$(F_CPU)
 CPPDEFS = -DF_CPU=$(F_CPU)UL
+
 
 CFLAGS = -g$(DEBUG)
 CFLAGS += $(CDEFS)
@@ -75,13 +65,11 @@ CFLAGS += -finline-limit=20
 CFLAGS += -Wall
 CFLAGS += -Wstrict-prototypes
 CFLAGS += -Wundef
-CFLAGS += -D$(TARGET)
+#CFLAGS += -Wunreachable-code
 CFLAGS += -Wa,-adhlns=$(<:%.c=$(OBJDIR)/%.lst)
 CFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 CFLAGS += $(CSTANDARD)
 CFLAGS += -mcall-prologues
-CFLAGS += -DF_CPU=$(F_CPU)UL
-#CFLAGS += -Wunreachable-code
 
 
 CPPFLAGS = -g$(DEBUG)
@@ -93,7 +81,7 @@ CPPFLAGS += -fpack-struct
 CPPFLAGS += -fshort-enums
 CPPFLAGS += -fno-exceptions
 CPPFLAGS += -Wall
-CPPFLAGS += -Wundef
+CFLAGS += -Wundef
 CPPFLAGS += -Wa,-adhlns=$(<:%.cpp=$(OBJDIR)/%.lst)
 CPPFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 
@@ -187,9 +175,7 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 
-all: 
-	make TARGET=nanoCUL868 mostly_clean sizebefore build sizeafter
-	make TARGET=nanoCUL433 mostly_clean sizebefore build sizeafter
+all: sizebefore build sizeafter
 
 build: elf hex eep lss sym
 
@@ -214,9 +200,7 @@ end:
 
 
 HEXSIZE = $(SIZE) $(TARGET).hex
-ELFSIZE = $(SIZE) --format=avr --mcu=$(MCU) $(TARGET).elf
-PROGRAM_SIZE = $(shell $(SIZE) --format=avr --mcu=$(MCU) $(TARGET).elf | grep Program | tr -s " " | cut -d " " -f 2 ; echo +$(BOOTLOADER_SIZE))
-PROGRAM_SIZE_PLUS_BL=$(shell echo $(PROGRAM_SIZE) | bc)
+ELFSIZE = $(SIZE) $(TARGET).elf
 
 sizebefore:
 	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_BEFORE); $(ELFSIZE); \
@@ -225,17 +209,9 @@ sizebefore:
 sizeafter:
 	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_AFTER); $(ELFSIZE); \
 	2>/dev/null; echo; fi
-	@echo "PROGRAM_SIZE_PLUS_BL: $(PROGRAM_SIZE_PLUS_BL), FLASH_SIZE: $(FLASH_SIZE) \n"
-	@if test $(PROGRAM_SIZE_PLUS_BL) -gt $(FLASH_SIZE); then echo "FLASH SIZE OVERFLOW ($(PROGRAM_SIZE_PLUS_BL)>$(FLASH_SIZE))"; exit 2; fi; 
 
 gccversion : 
 	@$(CC) --version
-
-program-433: 
-	make TARGET=nanoCUL433 program
-
-program-868:
-	make TARGET=nanoCUL868 program
 
 program: $(TARGET).hex
 	#@if test ! -d /sys/class/gpio/gpio17; then echo 17 > /sys/class/gpio/export; fi
@@ -349,7 +325,6 @@ extcoff: $(TARGET).elf
 
 $(OBJDIR)/%.o : %.c
 	@echo $(MSG_COMPILING) $<
-	@echo $(CC) -c $(ALL_CFLAGS) $< -o $@ 
 	@$(CC) -c $(ALL_CFLAGS) $< -o $@ 
 
 
@@ -381,30 +356,14 @@ clean: clean_list clean_binary
 clean_binary:
 	@$(REMOVE) $(TARGET).hex
 
-mostly_clean:
+clean_list:
 	@echo $(MSG_CLEANING)
-	@$(REMOVE) $(TARGET).hex
 	@$(REMOVE) $(TARGET).eep
 	@$(REMOVE) $(TARGET).cof
 	@$(REMOVE) $(TARGET).elf
 	@$(REMOVE) $(TARGET).map
 	@$(REMOVE) $(TARGET).sym
 	@$(REMOVE) $(TARGET).lss
-	@$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.o)
-	@$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.lst)
-	@$(REMOVE) $(SRC:.c=.s)
-	@$(REMOVE) $(SRC:.c=.d)
-	@$(REMOVE) $(SRC:.c=.i)
-
-clean_list:
-	@echo $(MSG_CLEANING)
-	@$(REMOVE) *.eep
-	@$(REMOVE) *.cof
-	@$(REMOVE) *.elf
-	@$(REMOVE) *.map
-	@$(REMOVE) *.sym
-	@$(REMOVE) *.lss
-	@$(REMOVE) *.hex
 	@$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.o)
 	@$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.lst)
 	@$(REMOVE) $(SRC:.c=.s)

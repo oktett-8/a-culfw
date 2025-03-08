@@ -1,9 +1,9 @@
-#include <stdint.h>                     // for uint8_t
-
-#include "board.h"                      // for SPI_DDR, SPI_SCLK, HAS_DOGM, etc
+#include <avr/io.h>
 #include "spi.h"
+#include "board.h"
 
-void spi_init(void)
+void
+spi_init(void)
 {
 #ifdef PRR0
   PRR0 &= ~_BV(PRSPI);
@@ -20,7 +20,9 @@ void spi_init(void)
 #endif
 
 }
-uint8_t spi_send(uint8_t data)
+
+uint8_t
+spi_send(uint8_t data)
 {
   SPDR = data;
   while (!(SPSR & _BV(SPIF)));

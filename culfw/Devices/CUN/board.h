@@ -1,7 +1,6 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#include <avr/io.h>
 
 #ifdef CUN_V10
 
@@ -109,18 +108,14 @@
 #define HAS_ESA
 #define HAS_TX3
 #define HAS_INTERTECHNO
-#define HAS_HOERMANN
-#define HAS_IT
 #define HAS_TCM97001
-#define HAS_HOMEEASY
-#define HAS_HMS
-#define HAS_MANCHESTER
-#define HAS_REVOLT
+#define HAS_HOERMANN
 
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG_SW
 
 #define BUSWARE_CUN
+
 
 #endif

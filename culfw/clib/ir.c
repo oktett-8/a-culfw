@@ -10,13 +10,14 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
-#include "display.h"
 #include "ir.h"
-#include "irmp.h"
-#include "irmpconfig.h"
-#include "irsnd.h"
-#include "irsndconfig.h"
+#include "display.h"
 #include "led.h"
+
+#include "irmpconfig.h"
+#include "irsndconfig.h"
+#include "irmp.h"
+#include "irsnd.h"
 
 uint8_t ir_mode = 0;
 uint8_t ir_internal = 1;

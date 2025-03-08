@@ -1,8 +1,6 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#include <avr/io.h>
-
 #define BOARD_ID_STR            "CUR"
 #define BOARD_ID_USTR           L"CUR"
 #define BUSWARE_CUR
@@ -34,12 +32,6 @@
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG_SW
-#define HAS_IT
-#define HAS_TCM97001
-#define HAS_HOMEEASY
-#define HAS_HMS
-#define HAS_MANCHESTER
-#define HAS_REVOLT
 
 #ifdef CURV3
 #  include "board_v3.h"

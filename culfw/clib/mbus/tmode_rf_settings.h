@@ -40,7 +40,6 @@
 static const uint8_t tModeRfConfig[] = {
 #else
 #include <avr/pgmspace.h>
-
 #define tCFG(index)  pgm_read_byte(&tModeRfConfig[index])
 static const uint8_t PROGMEM tModeRfConfig[] = {
 #endif

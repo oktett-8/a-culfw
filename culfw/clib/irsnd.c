@@ -22,11 +22,11 @@
  */
 
 #ifdef unix                                                                 // test/debug on linux/unix
-#include <inttypes.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <inttypes.h>
 
 #define DEBUG
 #define F_CPU 8000000L
@@ -50,19 +50,19 @@ typedef unsigned short  uint16_t;
   #define WGM21  1
   #define CS20   0
 #else
-  #include <avr/io.h>
-  #include <avr/pgmspace.h>
   #include <inttypes.h>
+  #include <avr/io.h>
   #include <util/delay.h>
+  #include <avr/pgmspace.h>
 #endif // CODEVISION
 
 #endif // WIN32
 #endif // unix
 
-#include "irmp.h"
-#include "irmpconfig.h"
-#include "irsnd.h"
 #include "irsndconfig.h"
+#include "irmpconfig.h"
+#include "irmp.h"
+#include "irsnd.h"
 
 /*---------------------------------------------------------------------------------------------------------------------------------------------------
  *  ATtiny pin definition of OC0A / OC0B
@@ -593,19 +593,19 @@ irsnd_send_data (IRMP_DATA * irmp_data_p, uint8_t do_wait)
 #if IRSND_SUPPORT_SIRCS_PROTOCOL == 1
         case IRMP_SIRCS_PROTOCOL:
         {
-            //uint8_t  sircs_additional_command_len;
+            uint8_t  sircs_additional_command_len;
             uint8_t  sircs_additional_address_len;
 
             sircs_additional_bitlen = (irmp_data_p->address & 0xFF00) >> 8;                             // additional bitlen
 
             if (sircs_additional_bitlen > 15 - SIRCS_MINIMUM_DATA_LEN)
             {
-                //sircs_additional_command_len = 15 - SIRCS_MINIMUM_DATA_LEN;
+                sircs_additional_command_len = 15 - SIRCS_MINIMUM_DATA_LEN;
                 sircs_additional_address_len = sircs_additional_bitlen - (15 - SIRCS_MINIMUM_DATA_LEN);
             }
             else
             {
-                //sircs_additional_command_len = sircs_additional_bitlen;
+                sircs_additional_command_len = sircs_additional_bitlen;
                 sircs_additional_address_len = 0;
             }
 
@@ -2030,7 +2030,7 @@ irsnd_ISR (void)
 int
 main (int argc, char ** argv)
 {
-    
+    int         idx;
     int         protocol;
     int         address;
     int         command;
@@ -2067,7 +2067,7 @@ main (int argc, char ** argv)
         {
             irsnd_ISR ();
         }
-        int idx;
+
         for (idx = 0; idx < 20; idx++)
         {
             irsnd_ISR ();

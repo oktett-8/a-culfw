@@ -1,8 +1,6 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#include <avr/io.h>
-
 #define HAS_FHT_8v                      // PROGMEM:  434b, RAM: 19b
 #define HAS_FHT_80b                     // PROGMEM: 1158b, RAM:  5b
 #define HAS_FHT_TF
@@ -78,11 +76,6 @@
 #define HAS_TCM97001
 #define HAS_HOERMANN
 #define HAS_SOMFY_RTS
-#define HAS_IT
-#define HAS_HMS
-#define HAS_HOMEEASY
-#define HAS_MANCHESTER
-#define HAS_REVOLT
 
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG
@@ -97,8 +90,8 @@
 #define HAS_UART                1
 #define UART_BAUD_RATE          38400
 #define HAS_ETHERNET            1
-#define HAS_ETHERNET_KEEPALIVE  1
-#define ETHERNET_KEEPALIVE_TIME 30
+//#define HAS_ETHERNET_KEEPALIVE  1
+//#define ETHERNET_KEEPALIVE_TIME 30
 #define HAS_NTP                 1
 #define HAS_ONEWIRE						  10		// OneWire Device Buffer, RAM: 10 * 8 Byte
 

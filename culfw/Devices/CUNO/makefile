@@ -14,19 +14,10 @@ SRC = $(TARGET).c                                                    \
 		../../clib/display.c                                 \
 		../../clib/stringfunc.c                              \
 		../../clib/fncollection.c                            \
-		../../clib/fband.c                                   \
 		../../clib/ringbuffer.c                              \
 		../../clib/rf_send.c                                 \
 		../../clib/rf_asksin.c                               \
 		../../clib/rf_receive.c                              \
-		../../clib/rf_receive_bucket.c                       \
-		../../clib/rf_receive_tcm97001.c                     \
-		../../clib/rf_receive_it.c                           \
-		../../clib/rf_receive_tx3.c                          \
-		../../clib/rf_receive_revolt.c                       \
-		../../clib/rf_receive_esa.c                          \
-		../../clib/rf_receive_hms.c                          \
-		../../clib/helper.c                                  \
 		../../clib/rf_router.c                               \
 		../../clib/fht.c                                     \
 		../../clib/fastrf.c                                  \

@@ -1,19 +1,11 @@
-#include <Drivers/USB/HighLevel/StdRequestType.h>
-#include <Drivers/USB/HighLevel/USBTask.h>  // for USB_ControlRequest
-#include <Drivers/USB/LowLevel/Endpoint.h>
-#include <Drivers/USB/LowLevel/LowLevel.h>
-#include <avr/interrupt.h>              // for cli, sei
-#include <stdbool.h>                    // for bool
-#include <stdint.h>                     // for uint8_t
-
-#include "Descriptors.h"                // for CDC_TX_EPNUM, CDC_RX_EPNUM, etc
-#include "board.h"                      // for USB_BUFSIZE
-#include "cdc.h"                        // for CDC_Line_Coding_t, etc
-#include "display.h"                    // for DISPLAY_USB
-#include "ttydata.h"                    // IWYU pragma: keep (for TTY_Rx_Buffer)
+#include "led.h"
+#include "ringbuffer.h"
+#include "cdc.h"
+#include "ttydata.h"
+#include "display.h"
 
 #undef CDC_FUNCTIONAL_DESCRIPTOR
-#include <Drivers/USB/Class/Common/CDC.h>
+#include "Drivers/USB/Class/Device/CDC.h"
 
 
 /* Globals: */

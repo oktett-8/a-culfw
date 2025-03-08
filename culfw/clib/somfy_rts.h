@@ -4,7 +4,6 @@
 #define SOMFY_RTS_FRAME_SIZE 7
 
 /* public prototypes */
-void somfy_rts_tunein(void);
 void somfy_rts_func(char *in);
 
 #endif

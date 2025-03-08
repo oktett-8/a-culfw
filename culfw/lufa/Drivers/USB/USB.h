@@ -88,7 +88,6 @@
 		#endif
 		
 	/* Includes: */
-        // IWYU pragma: begin_exports
 		#include "HighLevel/USBMode.h"
 		#include "HighLevel/USBTask.h"
 		#include "HighLevel/USBInterrupt.h"
@@ -114,7 +113,6 @@
 		#endif
 		
 		#include "HighLevel/ConfigDescriptor.h"
-	// IWYU pragma: end_exports
 		
 #endif
 

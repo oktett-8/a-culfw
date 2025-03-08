@@ -11,18 +11,9 @@ SRC =           COC.c\
 		../../clib/display.c                                 \
 		../../clib/stringfunc.c                              \
 		../../clib/fncollection.c                            \
-		../../clib/fband.c                                   \
 		../../clib/ringbuffer.c                              \
 		../../clib/rf_send.c                                 \
 		../../clib/rf_receive.c                              \
-		../../clib/rf_receive_bucket.c                       \
-		../../clib/rf_receive_tcm97001.c                     \
-		../../clib/rf_receive_it.c                           \
-		../../clib/rf_receive_tx3.c                          \
-		../../clib/rf_receive_revolt.c                       \
-		../../clib/rf_receive_esa.c                          \
-		../../clib/rf_receive_hms.c                          \
-		../../clib/helper.c                                  \
 		../../clib/rf_router.c                               \
 		../../clib/rf_asksin.c                               \
 		../../clib/rf_mbus.c                                 \
@@ -36,11 +27,11 @@ SRC =           COC.c\
 		../../clib/fht.c                                     \
 		../../clib/fastrf.c                                  \
 		../../clib/ttydata.c                                 \
-		../../clib/serial.c                                  \
+                ../../clib/serial.c                                  \
 		../../clib/spi.c                                     \
-		../../clib/twimaster.c                               \
-		../../clib/onewire.c                                 \
-		../../clib/ds1339.c                                  \
+		../../clib/twimaster.c                                \
+		../../clib/onewire.c                                  \
+                ../../clib/ds1339.c                                   \
 		../../clib/memory.c                                  \
                 ../../clib/rf_mbus.c                                 \
                 ../../clib/mbus/manchester.c                         \
@@ -131,7 +122,7 @@ lss: $(TARGET).lss
 sym: $(TARGET).sym
 
 
-ELFSIZE = $(SIZE) --format=avr --mcu=$(MCU) $(TARGET).elf
+ELFSIZE = $(SIZE) $(TARGET).elf
 
 size:
 	@if test -f $(TARGET).elf; then echo $(MSG_SIZE); $(ELFSIZE); \

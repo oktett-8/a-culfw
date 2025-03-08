@@ -27,41 +27,35 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <avr/interrupt.h>              // for cli, sei
-#include <avr/pgmspace.h>               // for PROGMEM, __LPM
-#include <avr/io.h>                     // for _BV
-#include <stdint.h>                     // for int8_t
-#include <stdlib.h>                     // for free, malloc
-#include <string.h>                     // for memcpy
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <util/parity.h>
+#include <string.h>
 
-#include "board.h"                      // for HAS_ASKSIN, HAS_MORITZ, etc
-#include "fband.h"                      // for checkFrequency
-#include "stringfunc.h"                 // for fromhex, fromdec
+#include "board.h"
 
 #ifdef HAS_SOMFY_RTS
 
-#include "cc1100.h"                     // for ccStrobe, cc1100_sendbyte, etc
-#include "delay.h"                      // for my_delay_us, my_delay_ms
-#include "display.h"                    // for DC, DNL, DU, display_hex2
-#include "fncollection.h"               // for EE_CC1100_CFG_SIZE, erb, etc
-#include "led.h"                        // for LED_OFF, LED_ON, SET_BIT
-#include "rf_receive.h"                 // for set_txrestore, tx_report
+#include "delay.h"
+#include "rf_send.h"
+#include "rf_receive.h"
+#include "led.h"
+#include "cc1100.h"
+#include "display.h"
+#include "fncollection.h"
 #include "somfy_rts.h"
-#include "rf_mode.h"
-#include "multi_CC.h"
-
-#ifndef USE_RF_MODE
 
 #ifdef HAS_ASKSIN
-#include "rf_asksin.h"                  // for asksin_on, rf_asksin_init
+#include "rf_asksin.h"
 #endif
 
 #ifdef HAS_MORITZ
-#include "rf_moritz.h"                  // for rf_moritz_init, moritz_on
+#include "rf_moritz.h"
 #endif
 
 static uint8_t somfy_rts_on = 0;
-#endif
 typedef uint8_t somfy_rts_frame_t;
 
 const PROGMEM const uint8_t CC1100_SOMFY_RTS_CFG[EE_CC1100_CFG_SIZE] = {
@@ -109,23 +103,16 @@ const PROGMEM const uint8_t CC1100_SOMFY_RTS_CFG[EE_CC1100_CFG_SIZE] = {
 	0x00,// 28 RCCTRL0   00    00
 };
 
-#ifndef USE_RF_MODE
 uint8_t somfy_restore_asksin = 0;
 uint8_t somfy_restore_moritz = 0;
-#endif
 
 uint8_t somfy_rts_repetition = 6;
 uint16_t somfy_rts_interval = 1240; // symbol width in us -> ca. 828 Hz data rate
 uint16_t somfy_rts_interval_half = 620;
 
-void somfy_rts_tunein(void) {
-#ifdef USE_HAL
-  hal_CC_GDO_init(CC_INSTANCE,INIT_MODE_OUT_CS_IN);
-  hal_enable_CC_GDOin_int(CC_INSTANCE,FALSE); // disable INT - we'll poll...
-#else
+static void somfy_rts_tunein(void) {
 	EIMSK &= ~_BV(CC1100_INT);
 	SET_BIT(CC1100_CS_DDR, CC1100_CS_PIN); // CS as output
-#endif
 
 	CC1100_DEASSERT;// Toggle chip select signal
 	my_delay_us(30);
@@ -159,41 +146,38 @@ void somfy_rts_tunein(void) {
 	// Set CC_ON
 	ccStrobe( CC1100_SCAL);
 	my_delay_ms(1);
-#ifndef USE_RF_MODE
 	cc_on = 1;
-#endif
-    checkFrequency(); 
 }
 
 static void send_somfy_rts_bitZero(void) {
 	// Somfy RTS bits are manchester encoded: 0 = high->low
-	CC1100_SET_OUT;// High
+	CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);// High
 	my_delay_us(somfy_rts_interval_half);
-	CC1100_CLEAR_OUT;// Low
+	CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);// Low
 	my_delay_us(somfy_rts_interval_half);
 }
 
 static void send_somfy_rts_bitOne(void) {
 	// Somfy RTS bits are manchester encoded: 1 = low->high
-	CC1100_CLEAR_OUT;// Low
+	CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);// Low
 	my_delay_us(somfy_rts_interval_half);
-	CC1100_SET_OUT;// High
+	CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);// High
 	my_delay_us(somfy_rts_interval_half);
 }
 
 static void send_somfy_rts_frame(somfy_rts_frame_t *frame, int8_t hwPulses) {
 	// send hardware sync (pulses of ca. double length)
 	for (int8_t i = 0; i < hwPulses; i++) {
-		CC1100_SET_OUT;		// High
+		CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);		// High
 		my_delay_us(2550);
-		CC1100_CLEAR_OUT;// Low
+		CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);// Low
 		my_delay_us(2550);
 	}
 
 	// send software sync (4 x symbol width high, half symbol width low)
-	CC1100_SET_OUT;// High
+	CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);// High
 	my_delay_us(4860);
-	CC1100_CLEAR_OUT;// Low
+	CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);// Low
 	my_delay_us(somfy_rts_interval_half);
 
 	// Send the user data
@@ -212,7 +196,7 @@ static void send_somfy_rts_frame(somfy_rts_frame_t *frame, int8_t hwPulses) {
 
 	// send inter-frame gap
 	// if last bit = 0, silence is 1/2 symbol longer
-	CC1100_CLEAR_OUT;// Low
+	CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);// Low
 	my_delay_us(30415 + ((frame[6] >> 7) & 1) ? 0 : somfy_rts_interval_half);
 }
 
@@ -236,11 +220,7 @@ static void somfy_rts_send(char *in) {
 	// key | ctrl+cks | rolling_code | address
 
 	uint8_t buf = 0;
-#ifdef ARM
-	somfy_rts_frame_t airdata[SOMFY_RTS_FRAME_SIZE];
-#else
 	somfy_rts_frame_t *airdata = malloc(SOMFY_RTS_FRAME_SIZE);
-#endif
 
 	fromhex(in+2, &buf, 1);// key
 	airdata[0] = buf;
@@ -267,11 +247,7 @@ static void somfy_rts_send(char *in) {
 	airdata[1] |= (somfy_rts_calc_checksum(airdata) & 0x0F);
 	
 	// save unencrypted data to return later
-#ifdef ARM
-	somfy_rts_frame_t unencrypted[SOMFY_RTS_FRAME_SIZE];
-#else
 	somfy_rts_frame_t *unencrypted = malloc(SOMFY_RTS_FRAME_SIZE);
-#endif
 	memcpy(unencrypted, airdata, SOMFY_RTS_FRAME_SIZE);
 
 	// "encrypt"
@@ -285,9 +261,6 @@ static void somfy_rts_send(char *in) {
 	cli();
 #endif
 
-#ifdef USE_RF_MODE
-	change_RF_mode(RF_mode_somfy);
-#else
 	// If NOT in Somfy mode
 	if (!somfy_rts_on) {
 	#ifdef HAS_ASKSIN
@@ -305,7 +278,6 @@ static void somfy_rts_send(char *in) {
 		somfy_rts_tunein();
 		my_delay_ms(3);             // 3ms: Found by trial and error
 	}
-#endif
 	ccStrobe(CC1100_SIDLE);
 	ccStrobe(CC1100_SFRX);
 	ccStrobe(CC1100_SFTX);
@@ -314,9 +286,9 @@ static void somfy_rts_send(char *in) {
 	ccTX();
 
 	// send wakeup pulse
-	CC1100_SET_OUT;// High
+	CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);// High
 	my_delay_us(9415);
-	CC1100_CLEAR_OUT;// Low
+	CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);// Low
 	my_delay_ms(89);// should be 89565 us
 	my_delay_us(565);
 
@@ -325,16 +297,6 @@ static void somfy_rts_send(char *in) {
 		send_somfy_rts_frame(airdata, (i == 0) ? 2 : 7); // send 2 hw Sync pulses at first, and 7 for repeated frames
 	}
 
-#ifdef USE_RF_MODE
-	if(!restore_RF_mode()) {
-	  // enable RX again
-    if (TX_REPORT) {
-      ccRX();
-    } else {
-      ccStrobe(CC1100_SIDLE);
-    }
-	}
-#else
 	if (somfy_rts_on) {
 		// enable RX again
 		if (tx_report) {
@@ -360,25 +322,22 @@ static void somfy_rts_send(char *in) {
   	else {
     	set_txrestore();
   	}
-#endif
 
 #if defined (HAS_IRRX) || defined (HAS_IRTX) //Activate IR_Reception again
 	sei();
 #endif
 
 	LED_OFF();
-	MULTICC_PREFIX();
+
 	DC('Y');
 	DC('s');
 	for(j = 0; j < SOMFY_RTS_FRAME_SIZE; j++) {
 		display_hex2(unencrypted[j]);
 	}
 	DNL();
-
-#ifndef ARM
+	
 	free(unencrypted);
 	free(airdata);
-#endif
 }
 
 void somfy_rts_func(char *in) {
@@ -387,7 +346,6 @@ void somfy_rts_func(char *in) {
 
 	} else if (in[1] == 'r') { // Set repetition
 		fromdec (in+2, (uint8_t *)&somfy_rts_repetition);
-		MULTICC_PREFIX();
 		DC('Y');DC('r');DC(':');
 		DU(somfy_rts_repetition, 0);
 		DNL();
@@ -400,15 +358,11 @@ void somfy_rts_func(char *in) {
 		}
 		somfy_rts_interval_half = somfy_rts_interval / 2;
 
-		MULTICC_PREFIX();
 		DC('Y');DC('t');DC(':');
 		DU(somfy_rts_interval, 6);
 		DNL();
 	} else if (in[1] == 'x') { 	// Reset Frequency back to Eeprom value
-#ifdef USE_RF_MODE
-	  set_RF_mode(RF_mode_off);
-#else
-	  if(0) { ;
+		if(0) { ;
 		#ifdef HAS_ASKSIN
 		} else if (somfy_restore_asksin) {
 			somfy_restore_asksin = 0;
@@ -430,7 +384,6 @@ void somfy_rts_func(char *in) {
 			}
 		}
 		somfy_rts_on = 0;
-#endif
 	}
 }
 

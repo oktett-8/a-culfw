@@ -1,15 +1,12 @@
 #ifndef _RF_MBUS_H
 #define _RF_MBUS_H
 
-#include <stdint.h>                     // for uint8_t
-
-#include "board.h"                      // for CC1100_IN_PIN, etc
+#include "board.h"
 
 #ifdef HAS_MBUS
 
-#include "mbus/mbus_defs.h"             // for uint8, uint16
+#include "mbus/mbus_defs.h"
 
-void rf_mbus_init(uint8_t mmode, uint8_t rmode);
 void rf_mbus_task(void);
 void rf_mbus_func(char *in);
 
@@ -39,6 +36,8 @@ typedef struct RXinfoDescr {
     uint8 start;                // Start of Packet
     uint8 complete;             // Packet received complete
     uint8 mode;                 // S-mode or T-mode
+    uint8 framemode;            // C-mode or T-mode frame
+    uint8 frametype;            // Frame type A or B when in C-mode
     uint8 state;
 } RXinfoDescr;
 
@@ -66,7 +65,6 @@ typedef struct TXinfoDescr {
     uint8  complete;            // Packet Sendt
 } TXinfoDescr;
 
-#ifndef USE_HAL
 #define GDO0_DDR  CC1100_OUT_DDR
 #define GDO0_PORT CC1100_OUT_PORT
 #define GDO0_PIN  CC1100_OUT_IN
@@ -76,7 +74,6 @@ typedef struct TXinfoDescr {
 #define GDO2_PORT CC1100_IN_PORT
 #define GDO2_PIN  CC1100_IN_IN
 #define GDO2_BIT  CC1100_IN_PIN
-#endif
 
 #endif
 #endif

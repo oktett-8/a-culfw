@@ -14,24 +14,14 @@ SRC = $(TARGET).c                                                    \
 		../../clib/stringfunc.c                              \
 		../../clib/fncollection.c                            \
 		../../clib/ringbuffer.c                              \
-		../../clib/fband.c                                   \
 		../../clib/rf_send.c                                 \
 		../../clib/rf_asksin.c                               \
 		../../clib/rf_moritz.c                               \
 		../../clib/rf_receive.c                              \
-		../../clib/rf_receive_bucket.c                       \
-		../../clib/rf_receive_tcm97001.c                     \
-		../../clib/rf_receive_it.c                           \
-		../../clib/rf_receive_tx3.c                          \
-		../../clib/rf_receive_revolt.c                       \
-		../../clib/rf_receive_esa.c                          \
-		../../clib/rf_receive_hms.c                          \
-		../../clib/helper.c                                  \
 		../../clib/rf_router.c                               \
 		../../clib/rf_zwave.c                                \
-		../../clib/rf_mbus.c                                 \
 		../../clib/intertechno.c                             \
-		../../clib/somfy_rts.c	                             \
+		../../clib/somfy_rts.c				     \
 		../../clib/fht.c                                     \
 		../../clib/fastrf.c                                  \
 		../../clib/memory.c                                  \
@@ -39,11 +29,11 @@ SRC = $(TARGET).c                                                    \
 		../../clib/ttydata.c                                 \
 		../../clib/stacking.c                                \
 		../../clib/spi.c                                     \
-		../../clib/rf_mbus.c                                 \
-		../../clib/mbus/manchester.c                         \
-		../../clib/mbus/3outof6.c                            \
-		../../clib/mbus/mbus_packet.c                        \
-		../../clib/mbus/crc.c                                \
+                ../../clib/rf_mbus.c                                 \
+                ../../clib/mbus/manchester.c                         \
+                ../../clib/mbus/3outof6.c                            \
+                ../../clib/mbus/mbus_packet.c                        \
+                ../../clib/mbus/crc.c                                \
 
 
 
@@ -182,7 +172,7 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 
-all: build sizeafter
+all: clean build sizeafter
 
 build: elf hex eep lss sym
 
@@ -418,7 +408,7 @@ clean_list:
 	@$(REMOVE) $(SRC:.c=.s)
 	@$(REMOVE) $(SRC:.c=.d)
 	@$(REMOVE) $(SRC:.c=.i)
-	@$(REMOVEDIR) .dep
+#	@$(REMOVEDIR) .dep
 
 
 $(shell mkdir $(OBJDIR) 2>/dev/null)

@@ -7,10 +7,8 @@
 #ifndef CC1100_H
 #define CC1100_H
 
-#include <avr/io.h>                     // for _BV
-#include <stdint.h>                     // for uint8_t
-
-#include "led.h"                        // for SET_BIT, CLEAR_BIT
+#include <avr/io.h>
+#include "led.h"
 
 void ccInitChip(uint8_t *cfg);
 void cc_factory_reset(void);
@@ -26,9 +24,8 @@ uint8_t cc1100_readReg(uint8_t addr);
 void set_ccoff(void);
 void set_ccon(void);
 
-#ifndef USE_RF_MODE
 extern uint8_t cc_on;
-#endif
+
 
 // Configuration Registers
 #define CC1100_IOCFG2           0x00    // GDO2 output pin configuration
@@ -178,21 +175,10 @@ extern uint8_t cc_on;
 #define MARCSTATE_RXTX_SWITCH      0x15
 #define MARCSTATE_TXFIFO_UNDERFLOW 0x16
 
-#include "board.h"                      // for CC1100_CS_PIN, etc
+#include "board.h"
 
-#ifdef USE_HAL
-#include "rf_mode.h"
-#define CC1100_DEASSERT   hal_CC_Pin_Set(CC_INSTANCE,CC_Pin_CS,GPIO_PIN_SET)
-#define CC1100_ASSERT     hal_CC_Pin_Set(CC_INSTANCE,CC_Pin_CS,GPIO_PIN_RESET)
-#define CC1100_SET_OUT    hal_CC_Pin_Set(CC_INSTANCE,CC_Pin_Out,GPIO_PIN_SET)
-#define CC1100_CLEAR_OUT  hal_CC_Pin_Set(CC_INSTANCE,CC_Pin_Out,GPIO_PIN_RESET)
-
-#else
-#define CC1100_DEASSERT  	SET_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
-#define CC1100_ASSERT    	CLEAR_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
-#define CC1100_SET_OUT		CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN)
-#define CC1100_CLEAR_OUT	CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN)
-#endif
+#define CC1100_DEASSERT  SET_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
+#define CC1100_ASSERT    CLEAR_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
 
 
 /******************************************************************************/

@@ -1,34 +1,23 @@
-#include <avr/io.h>                     // for _BV, bit_is_set
-#include <stdint.h>                     // for uint8_t, uint32_t
-
-#include "board.h"                      // for CC1100_CS_DDR, etc
-#include "led.h"                        // for SET_BIT
-#include "stringfunc.h"                 // for fromhex
+#include "board.h"
 #ifdef HAS_MORITZ
-#include <avr/pgmspace.h>               // for PSTR, pgm_read_byte, etc
+#include <string.h>
+#include <avr/pgmspace.h>
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include "cc1100.h"
+#include "delay.h"
+#include "rf_receive.h"
+#include "display.h"
+#include "clock.h"
+#include "rf_send.h" //credit_10ms
 
-#include "cc1100.h"                     // for cc1100_readReg, ccStrobe, etc
-#include "clock.h"                      // for ticks
-#include "delay.h"                      // for my_delay_ms, my_delay_us
-#include "display.h"                    // for DC, DH2, DNL, DS_P
-#include "fband.h"                      // for checkFrequency
 #include "rf_moritz.h"
-#include "rf_receive.h"                 // for REP_RSSI, set_txrestore, etc
-#include "rf_send.h"                    // for credit_10ms
-#include "multi_CC.h"
-#include "rf_mode.h"
-
-#ifdef USE_HAL
-#include "hal.h"
-#endif
 
 void moritz_sendraw(uint8_t* buf, int longPreamble);
 void moritz_sendAck(uint8_t* enc);
 void moritz_handleAutoAck(uint8_t* enc);
 
-#ifndef USE_RF_MODE
 uint8_t moritz_on = 0;
-#endif
 
 /*
  * CC1100_PKTCTRL0.LENGTH_CONFIG = 1 //Variable packet length mode. Packet length configured by the first byte after sync word
@@ -88,13 +77,8 @@ static uint32_t lastSendingTicks = 0;
 void
 rf_moritz_init(void)
 {
-#ifdef USE_HAL
-  hal_CC_GDO_init(CC_INSTANCE,INIT_MODE_IN_CS_IN);
-  hal_enable_CC_GDOin_int(CC_INSTANCE,FALSE); // disable INT - we'll poll...
-#else
   EIMSK &= ~_BV(CC1100_INT);                 // disable INT - we'll poll...
   SET_BIT( CC1100_CS_DDR, CC1100_CS_PIN );   // CS as output
-#endif
 
   CC1100_DEASSERT;                           // Toggle chip select signal
   my_delay_us(30);
@@ -125,10 +109,7 @@ rf_moritz_init(void)
   while(cnt-- && (ccStrobe( CC1100_SRX ) & 0x70) != 1)
     my_delay_us(10);
 
-#ifndef USE_RF_MODE
   moritz_on = 1;
-#endif
-  checkFrequency(); 
 }
 
 void
@@ -178,17 +159,11 @@ rf_moritz_task(void)
   uint8_t enc[MAX_MORITZ_MSG];
   uint8_t rssi;
 
-#ifndef USE_RF_MODE
   if(!moritz_on)
     return;
-#endif
 
   // see if a CRC OK pkt has been arrived
-#ifdef USE_HAL
-  if (hal_CC_Pin_Get(CC_INSTANCE,CC_Pin_In)) {
-#else
   if(bit_is_set( CC1100_IN_PORT, CC1100_IN_PIN )) {
-#endif
     //errata #1 does not affect us, because we wait until packet is completely received
     enc[0] = cc1100_readReg( CC1100_RXFIFO ) & 0x7f; // read len
 
@@ -211,9 +186,8 @@ rf_moritz_task(void)
 
     moritz_handleAutoAck(enc);
 
-    MULTICC_PREFIX();
+    if (tx_report & REP_BINTIME) {
 
-    if (TX_REPORT & REP_BINTIME) {
       DC('z');
       for (uint8_t i=0; i<=enc[0]; i++)
       DC( enc[i] );
@@ -221,7 +195,7 @@ rf_moritz_task(void)
       DC('Z');
       for (uint8_t i=0; i<=enc[0]; i++)
         DH2( enc[i] );
-      if (TX_REPORT & REP_RSSI)
+      if (tx_report & REP_RSSI)
         DH2(rssi);
       DNL();
     }
@@ -245,7 +219,6 @@ moritz_send(char *in)
   uint8_t hblen = fromhex(in+1, dec, MAX_MORITZ_MSG-1);
 
   if ((hblen-1) != dec[0]) {
-    MULTICC_PREFIX();
     DS_P(PSTR("LENERR\r\n"));
     return;
   }
@@ -260,23 +233,17 @@ moritz_sendraw(uint8_t *dec, int longPreamble)
   //1kb/s = 1 bit/ms. we send 1 sec preamble + hblen*8 bits
   uint32_t sum = (longPreamble ? 100 : 0) + (hblen*8)/10;
   if (credit_10ms < sum) {
-    MULTICC_PREFIX();
     DS_P(PSTR("LOVF\r\n"));
     return;
   }
   credit_10ms -= sum;
 
-#ifdef USE_RF_MODE
-  change_RF_mode(RF_mode_moritz);
-#else
   // in Moritz mode already?
   if(!moritz_on) {
     rf_moritz_init();
   }
-#endif
 
   if(cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_RX) { //error
-    MULTICC_PREFIX();
     DC('Z');
     DC('E');
     DC('R');
@@ -304,7 +271,6 @@ moritz_sendraw(uint8_t *dec, int longPreamble)
   ccTX();
 
   if(cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_TX) { //error
-    MULTICC_PREFIX();
     DC('Z');
     DC('E');
     DC('R');
@@ -335,38 +301,28 @@ moritz_sendraw(uint8_t *dec, int longPreamble)
   //Wait for sending to finish (CC1101 will go to RX state automatically
   //after sending
   uint8_t i;
-  uint8_t stat1,stat2;
-  for(i=0; i< 250;++i) {
-    stat1=cc1100_readReg( CC1100_MARCSTATE );
-    stat2=cc1100_readReg( CC1100_MARCSTATE );
-    if(stat1!=stat2) 
-        continue;
-    if( stat1 == MARCSTATE_RX)
+  for(i=0; i< 200;++i) {
+    if( cc1100_readReg( CC1100_MARCSTATE ) == MARCSTATE_RX)
       break; //now in RX, good
-  
+    if( cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_TX)
+      break; //neither in RX nor TX, probably some error
     my_delay_ms(1);
   }
 
   if(cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_RX) { //error
-    MULTICC_PREFIX();
     DC('Z');
     DC('E');
     DC('R');
     DC('R');
     DC('3');
     DH2(cc1100_readReg( CC1100_MARCSTATE ));
-    DH2(stat1);
-    DH2(i);
     DNL();
     rf_moritz_init();
   }
-#ifdef USE_RF_MODE
-  restore_RF_mode();
-#else
+
   if(!moritz_on) {
     set_txrestore();
   }
-#endif
   lastSendingTicks = ticks;
 }
 
@@ -390,11 +346,10 @@ moritz_sendAck(uint8_t* enc)
   moritz_sendraw(ackPacket, 0);
 
   //Inform FHEM that we send an autoack
-  MULTICC_PREFIX();
   DC('Z');
   for (uint8_t i=0; i < ackPacket[0]+1; i++)
     DH2( ackPacket[i] );
-  if (TX_REPORT & REP_RSSI)
+  if (tx_report & REP_RSSI)
     DH2( 0 ); //fake some rssi
   DNL();
 }
@@ -403,17 +358,12 @@ void
 moritz_func(char *in)
 {
   if(in[1] == 'r') {                // Reception on
-#ifdef USE_RF_MODE
-    set_RF_mode(RF_mode_moritz);
-#else
     rf_moritz_init();
-#endif
 
   } else if(in[1] == 's' || in[1] == 'f' ) {         // Send/Send fast
     uint8_t dec[MAX_MORITZ_MSG];
     uint8_t hblen = fromhex(in+2, dec, MAX_MORITZ_MSG-1);
     if ((hblen-1) != dec[0]) {
-      MULTICC_PREFIX();
       DS_P(PSTR("LENERR\r\n"));
       return;
     }
@@ -426,11 +376,7 @@ moritz_func(char *in)
     fromhex(in+2, fakeWallThermostatAddr, 3);
 
   } else {                          // Off
-#ifdef USE_RF_MODE
-    set_RF_mode(RF_mode_off);
-#else
     moritz_on = 0;
-#endif
 
   }
 }

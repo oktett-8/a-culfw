@@ -1,19 +1,17 @@
-#include <avr/io.h>                     // for _BV
-#include <stdint.h>                     // for uint8_t, uint16_t
-
-#include "board.h"                      // for CC1100_OUT_PIN, etc
-#include "stringfunc.h"                 // for fromhex, tohex
+#include "board.h"
 #ifdef HAS_RF_ROUTER
-#include "cc1100.h"                     // for cc1100_sendbyte, etc
-#include "clock.h"                      // for ticks
-#include "delay.h"                      // for my_delay_ms, my_delay_us
-#include "display.h"                    // for DH2, DNL, DC, etc
-#include "fncollection.h"               // for erb, ewb, EE_FASTRF_CFG, etc
-#include "rf_receive.h"                 // for set_txrestore, etc
+#include <string.h>
+#include <avr/pgmspace.h>
 #include "rf_router.h"
-#include "ringbuffer.h"                 // for rb_reset, rb_t, rb_put, etc
-#include "ttydata.h"                    // for TTY_Rx_Buffer, etc
-#include "rf_mode.h"
+#include "cc1100.h"
+#include "delay.h"
+#include "display.h"
+#include "rf_receive.h"
+#include "fncollection.h"
+#include "clock.h"
+#include "ringbuffer.h"
+#include "ttydata.h"
+#include "fht.h"
 
 uint8_t rf_router_status;
 uint8_t rf_router_myid;
@@ -38,14 +36,14 @@ uint8_t filter[6];
 #undef RFR_USBECHO
 
 
-/*void
+void
 usbMsg(char *s)
 {
   display_channel = DISPLAY_USB;
   display_string(s);
   DNL();
   display_channel = 0xff;
-}*/
+}
 
 void
 rf_router_init()
@@ -53,7 +51,7 @@ rf_router_init()
   rf_router_myid = erb(EE_RF_ROUTER_ID);
   rf_router_target = erb(EE_RF_ROUTER_ROUTER);
   if(rf_router_target) {
-    TX_REPORT = 0x21;
+    tx_report = 0x21;
     set_txrestore();
   }
 #ifdef RFR_FILTER

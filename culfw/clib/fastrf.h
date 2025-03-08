@@ -1,8 +1,6 @@
 #ifndef _FASTRF_H
 #define _FASTRF_H
 
-#include <stdint.h>                     // for uint8_t
-
 #define FASTRF_MODE_ON	1
 #define FASTRF_MODE_OFF	0
 

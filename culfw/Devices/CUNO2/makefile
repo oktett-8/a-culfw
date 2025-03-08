@@ -21,18 +21,9 @@ SRC = $(TARGET).c                                                    \
 		../../clib/stringfunc.c                              \
 		../../clib/fncollection.c                            \
 		../../clib/ringbuffer.c                              \
-		../../clib/fband.c                                   \
 		../../clib/rf_send.c                                 \
 		../../clib/rf_asksin.c                               \
 		../../clib/rf_receive.c                              \
-		../../clib/rf_receive_bucket.c                       \
-		../../clib/rf_receive_tcm97001.c                     \
-		../../clib/rf_receive_it.c                           \
-		../../clib/rf_receive_tx3.c                          \
-		../../clib/rf_receive_revolt.c                       \
-		../../clib/rf_receive_esa.c                          \
-		../../clib/rf_receive_hms.c                          \
-		../../clib/helper.c                                  \
 		../../clib/rf_router.c                               \
 		../../clib/rf_moritz.c                               \
 		../../clib/fht.c                                     \
@@ -64,11 +55,11 @@ SRC = $(TARGET).c                                                    \
 		../../clib/dmx.c                                      \
 		../../clib/intertechno.c                              \
 		../../clib/hm485.c                                      \
-		../../clib/rf_mbus.c                                 \
-		../../clib/mbus/manchester.c                         \
-		../../clib/mbus/3outof6.c                            \
-		../../clib/mbus/mbus_packet.c                        \
-		../../clib/mbus/crc.c                                \
+                ../../clib/rf_mbus.c                                 \
+                ../../clib/mbus/manchester.c                         \
+                ../../clib/mbus/3outof6.c                            \
+                ../../clib/mbus/mbus_packet.c                        \
+                ../../clib/mbus/crc.c                                \
 		../../clib/somfy_rts.c					\
 		
 OPT = s
@@ -93,11 +84,11 @@ CFLAGS += -finline-limit=20
 CFLAGS += -Wall -Wno-strict-aliasing -Wno-unused-but-set-variable
 CFLAGS += -Wstrict-prototypes
 CFLAGS += -Wundef
+#CFLAGS += -Wunreachable-code
 CFLAGS += -Wa,-adhlns=$(<:%.c=$(OBJDIR)/%.lst)
 CFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 CFLAGS += $(CSTANDARD)
 CFLAGS += -mcall-prologues
-#CFLAGS += -Wunreachable-code
 
 
 CPPFLAGS = -g$(DEBUG)
@@ -109,7 +100,7 @@ CPPFLAGS += -fpack-struct
 CPPFLAGS += -fshort-enums
 CPPFLAGS += -fno-exceptions
 CPPFLAGS += -Wall
-CPPFLAGS += -Wundef
+CFLAGS += -Wundef
 CPPFLAGS += -Wa,-adhlns=$(<:%.cpp=$(OBJDIR)/%.lst)
 CPPFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 
@@ -228,7 +219,7 @@ end:
 
 
 HEXSIZE = $(SIZE) $(TARGET).hex
-ELFSIZE = $(SIZE) --format=avr --mcu=$(MCU) $(TARGET).elf
+ELFSIZE = $(SIZE) $(TARGET).elf
 
 sizebefore:
 	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_BEFORE); $(ELFSIZE); \

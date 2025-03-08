@@ -1,17 +1,14 @@
 #include "fswrapper.h"
-
-#include <avr/io.h>
-#include <avr/wdt.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "cc1100.h"
-#include "clock.h"
-#include "display.h"
 #include "fncollection.h"       // EE_LOGENABLED
+#include "display.h"
 #include "menu.h"
 #include "rf_receive.h"
-#include "stringfunc.h"
+#include "cc1100.h"
+#include <stdlib.h>
+#include <string.h>
+#include <avr/wdt.h>
+#include "clock.h"
+#include <avr/wdt.h>
 #include "ttydata.h"
 
 #define BUFSIZE 128
